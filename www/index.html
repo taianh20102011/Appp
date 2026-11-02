@@ -145,6 +145,32 @@
     <section id="sectionDiagnostic">
       <div class="bento-grid">
         
+        <!-- Top Banner: Upload or Snap Exam Papers -->
+        <div class="bento-card col-12" style="background: linear-gradient(135deg, rgba(37,99,235,0.06), rgba(16,185,129,0.06)); border: 1px dashed var(--accent-primary); padding: 14px 18px; margin-bottom: 2px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="font-size: 2rem;">📸</div>
+              <div>
+                <h4 style="font-weight: 700; font-size: 0.95rem; margin: 0;">Bạn có ảnh đề thi trên giấy muốn giải & tự huấn luyện AI?</h4>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 3px 0 0 0;">
+                  Chụp bằng camera/webcam, chọn nhiều ảnh hoặc nhấn <strong>Ctrl + V</strong> dán ảnh. AI sẽ tự động bóc tách và phân tích lỗ hổng kiến thức ngay!
+                </p>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <label for="examCameraInput" class="btn btn-primary btn-sm" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                📷 Chụp Ảnh Bằng Camera
+              </label>
+              <label for="examMultiFilesInput" class="btn btn-secondary btn-sm" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                📁 Chọn Nhiều Ảnh Đề Thi
+              </label>
+              <button type="button" class="btn btn-secondary btn-sm btn-open-webcam" style="display: inline-flex; align-items: center; gap: 6px;">
+                🎥 Bật Webcam Trực Tiếp
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Left: Adaptive Question Card -->
         <div class="bento-card col-7">
           <div class="card-header-row">
@@ -370,17 +396,20 @@
             </div>
           </div>
 
-          <!-- Hidden File Inputs -->
-          <input type="file" id="examCameraInput" accept="image/*" capture="environment" style="display: none;">
-          <input type="file" id="examMultiFilesInput" accept="image/*" multiple style="display: none;">
+          <!-- Accessible File Inputs (Opacity 0 so labels work 100% on all browsers and devices) -->
+          <input type="file" id="examCameraInput" accept="image/*" capture="environment" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;">
+          <input type="file" id="examMultiFilesInput" accept="image/*" multiple style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;">
 
           <!-- Action Control Toolbar -->
           <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;">
-            <button id="btnTriggerCamera" class="btn btn-primary btn-sm">
+            <label for="examCameraInput" class="btn btn-primary btn-sm" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
               📷 Chụp Ảnh Bằng Camera
-            </button>
-            <button id="btnTriggerMultiFiles" class="btn btn-secondary btn-sm">
+            </label>
+            <label for="examMultiFilesInput" class="btn btn-secondary btn-sm" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
               📁 Chọn Nhiều Ảnh Đề Thi (Multi-Select)
+            </label>
+            <button type="button" class="btn btn-secondary btn-sm btn-open-webcam" style="display: inline-flex; align-items: center; gap: 6px;">
+              🎥 Bật Webcam Trực Tiếp
             </button>
             <button id="btnClearExamImages" class="btn btn-secondary btn-sm" style="display: none;">
               🗑️ Xóa Tất Cả Ảnh
@@ -537,6 +566,33 @@
       <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
         <button class="btn btn-secondary" id="clearGeminiKeyBtn" onclick="document.getElementById('geminiKeyInput').value=''; document.getElementById('saveGeminiKeyBtn').click();">Xóa Key (Dùng Offline AI)</button>
         <button class="btn btn-primary" id="saveGeminiKeyBtn">Lưu & Kiểm Tra</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Live Webcam Exam Scanner -->
+  <div class="modal-overlay" id="webcamModal">
+    <div class="modal-card" style="max-width: 620px;">
+      <div class="card-header-row">
+        <h3>🎥 Chụp Ảnh Đề Thi Bằng Webcam Trực Tiếp</h3>
+        <button class="btn-icon" id="closeWebcamModal">✕</button>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px;">
+        Đưa trang đề thi hoặc bài kiểm tra trước camera/webcam, sau đó bấm <strong>Bấm Chụp Trang Này</strong>.
+      </p>
+      <div style="position: relative; width: 100%; border-radius: 6px; overflow: hidden; background: #000; aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center;">
+        <video id="webcamVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+        <canvas id="webcamCanvas" style="display: none;"></canvas>
+        <div style="position: absolute; border: 2px dashed rgba(255,255,255,0.7); border-radius: 6px; width: 88%; height: 85%; pointer-events: none; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px;">
+          <span style="background: rgba(0,0,0,0.65); color: #fff; font-size: 0.75rem; padding: 3px 10px; border-radius: 4px;">Căn chỉnh trang đề thi vào khung này</span>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; flex-wrap: wrap; gap: 8px;">
+        <span id="webcamSnapCountBadge" class="badge badge-green">Đã chụp: 0 ảnh</span>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" id="btnSnapWebcamPhoto" class="btn btn-primary btn-sm">📸 Bấm Chụp Trang Này</button>
+          <button type="button" id="btnDoneWebcam" class="btn btn-secondary btn-sm">Xong & Xem Danh Sách Ảnh</button>
+        </div>
       </div>
     </div>
   </div>

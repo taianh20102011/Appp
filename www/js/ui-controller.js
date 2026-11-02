@@ -143,6 +143,15 @@
     elements.scannedFeedbackBox = document.getElementById('scannedFeedbackBox');
     elements.btnNextScannedQuestion = document.getElementById('btnNextScannedQuestion');
     elements.btnAutoTrainAllScanned = document.getElementById('btnAutoTrainAllScanned');
+
+    // Webcam Elements
+    elements.webcamModal = document.getElementById('webcamModal');
+    elements.closeWebcamModal = document.getElementById('closeWebcamModal');
+    elements.webcamVideo = document.getElementById('webcamVideo');
+    elements.webcamCanvas = document.getElementById('webcamCanvas');
+    elements.btnSnapWebcamPhoto = document.getElementById('btnSnapWebcamPhoto');
+    elements.btnDoneWebcam = document.getElementById('btnDoneWebcam');
+    elements.webcamSnapCountBadge = document.getElementById('webcamSnapCountBadge');
   }
 
   function initServices() {
@@ -1115,20 +1124,13 @@
   }
 
   // Exam Paper Multi-Capture OCR & Real-time Neural Network Training Module
+  let activeWebcamStream = null;
+  let webcamSnapCount = 0;
+
   function initExamOCRModule() {
     if (!window.SmartExamOCR) return;
 
-    // Trigger Camera
-    elements.btnTriggerCamera?.addEventListener('click', () => {
-      elements.examCameraInput?.click();
-    });
-
-    // Trigger Multi-files
-    elements.btnTriggerMultiFiles?.addEventListener('click', () => {
-      elements.examMultiFilesInput?.click();
-    });
-
-    // Handle Camera file change
+    // Direct change event on file inputs (fired when clicked or chosen via <label for="...">)
     elements.examCameraInput?.addEventListener('change', async (e) => {
       if (e.target.files && e.target.files.length > 0) {
         await handleExamFilesAdded(e.target.files);
@@ -1136,7 +1138,6 @@
       }
     });
 
-    // Handle Multi-files change
     elements.examMultiFilesInput?.addEventListener('change', async (e) => {
       if (e.target.files && e.target.files.length > 0) {
         await handleExamFilesAdded(e.target.files);
@@ -1164,6 +1165,43 @@
         elements.examMultiFilesInput?.click();
       });
     }
+
+    // Clipboard Paste (Ctrl + V to paste exam screenshot)
+    window.addEventListener('paste', async (e) => {
+      const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
+      if (!items) return;
+      const imageFiles = [];
+      for (const item of items) {
+        if (item.type.indexOf('image') !== -1) {
+          const blob = item.getAsFile();
+          if (blob) imageFiles.push(blob);
+        }
+      }
+      if (imageFiles.length > 0) {
+        await handleExamFilesAdded(imageFiles);
+        showToast(`Đã nhận ${imageFiles.length} ảnh đề thi từ Clipboard (Ctrl+V)!`, 'success');
+      }
+    });
+
+    // Webcam Live Scanner Modal
+    const webcamOpenButtons = document.querySelectorAll('.btn-open-webcam');
+    webcamOpenButtons.forEach(btn => {
+      btn.addEventListener('click', startLiveWebcam);
+    });
+
+    elements.closeWebcamModal?.addEventListener('click', stopLiveWebcam);
+    elements.btnDoneWebcam?.addEventListener('click', () => {
+      stopLiveWebcam();
+      showToast('Đã lưu ảnh chụp từ Webcam! Nhấn "Bắt Đầu Quét" để phân tích.', 'success');
+      elements.tabNeural?.click();
+      setTimeout(() => {
+        elements.examOCRCard?.scrollIntoView({ behavior: 'smooth' });
+      }, 200);
+    });
+
+    elements.btnSnapWebcamPhoto?.addEventListener('click', () => {
+      snapWebcamPhoto();
+    });
 
     // Clear all images
     elements.btnClearExamImages?.addEventListener('click', () => {
@@ -1223,10 +1261,101 @@
     });
   }
 
+  // Webcam Helpers
+  async function startLiveWebcam() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert('Trình duyệt hoặc thiết bị của bạn không hỗ trợ truy cập Webcam trực tiếp. Vui lòng bấm "Chọn Nhiều Ảnh" hoặc "Chụp Ảnh Bằng Camera" để dùng bộ chọn file của hệ điều hành.');
+      return;
+    }
+
+    try {
+      webcamSnapCount = 0;
+      if (elements.webcamSnapCountBadge) elements.webcamSnapCountBadge.textContent = 'Đã chụp: 0 ảnh';
+      elements.webcamModal.classList.add('open');
+
+      activeWebcamStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
+        audio: false
+      });
+
+      if (elements.webcamVideo) {
+        elements.webcamVideo.srcObject = activeWebcamStream;
+      }
+    } catch (err) {
+      console.error('Không thể mở Webcam:', err);
+      alert('Không thể kết nối với Camera/Webcam (' + err.message + '). Bạn có thể dùng nút "Chọn Nhiều Ảnh Đề Thi" để tải ảnh có sẵn!');
+      stopLiveWebcam();
+    }
+  }
+
+  function snapWebcamPhoto() {
+    if (!elements.webcamVideo || !elements.webcamCanvas) return;
+    const video = elements.webcamVideo;
+    const canvas = elements.webcamCanvas;
+
+    const w = video.videoWidth || 1280;
+    const h = video.videoHeight || 720;
+    canvas.width = w;
+    canvas.height = h;
+
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, w, h);
+
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    webcamSnapCount++;
+    if (elements.webcamSnapCountBadge) {
+      elements.webcamSnapCountBadge.textContent = `Đã chụp: ${webcamSnapCount} ảnh`;
+    }
+
+    // Add into SmartExamOCR list
+    const imgObj = {
+      id: 'snap_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      file: null,
+      name: `Anh_chup_webcam_${window.SmartExamOCR.uploadedImages.length + 1}.jpg`,
+      size: `${Math.round(dataUrl.length * 0.75 / 1024)} KB`,
+      dataUrl,
+      status: 'ready',
+      progress: 0,
+      rawText: '',
+      questions: []
+    };
+
+    window.SmartExamOCR.uploadedImages.push(imgObj);
+    renderExamImagesGrid();
+
+    // Flash animation on video frame
+    if (window.gsap) {
+      window.gsap.fromTo(video, { filter: 'brightness(2)' }, { filter: 'brightness(1)', duration: 0.25 });
+    }
+    showToast(`Đã chụp trang ${webcamSnapCount}!`, 'success');
+  }
+
+  function stopLiveWebcam() {
+    if (activeWebcamStream) {
+      activeWebcamStream.getTracks().forEach(track => track.stop());
+      activeWebcamStream = null;
+    }
+    if (elements.webcamVideo) {
+      elements.webcamVideo.srcObject = null;
+    }
+    elements.webcamModal?.classList.remove('open');
+  }
+
   async function handleExamFilesAdded(files) {
     const added = await window.SmartExamOCR.addImages(files);
     renderExamImagesGrid();
-    showToast(`Đã nạp ${added.length} ảnh đề thi. Nhấn 'Bắt Đầu Quét' để trích xuất câu hỏi.`, 'success');
+    showToast(`Đã nạp ${added.length} ảnh đề thi thành công!`, 'success');
+
+    // Switch to neural tab and scroll to OCR area
+    elements.tabNeural?.click();
+    setTimeout(() => {
+      const card = document.getElementById('examOCRCard');
+      if (card) card.scrollIntoView({ behavior: 'smooth' });
+    }, 150);
   }
 
   function renderExamImagesGrid() {
