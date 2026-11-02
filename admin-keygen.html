@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SMART AI - Công Cụ Quản Trị & Cấp Khóa Bản Quyền (Admin Keygen)</title>
+  <link rel="stylesheet" href="./css/styles.css">
+  <style>
+    body {
+      background-color: var(--bg-surface);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .keygen-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      max-width: 580px;
+      width: 100%;
+      padding: 24px;
+    }
+    .form-group {
+      margin-bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="keygen-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-divider); padding-bottom: 12px;">
+      <div>
+        <h2 style="font-size: 1.25rem; font-weight: 800; margin: 0;">SMART AI - Cấp Khóa Bản Quyền (Admin Only)</h2>
+        <span style="font-size: 0.78rem; color: var(--text-muted);">Dành riêng cho Tác giả: <strong>Tài Anh</strong> (phamngoctaianh6@gmail.com)</span>
+      </div>
+      <span class="badge badge-red" style="font-size: 0.7rem;">ADMIN SECURE</span>
+    </div>
+
+    <div class="form-group">
+      <label>Mã Vân Tay Thiết Bị Của Khách Hàng (Hardware Fingerprint):</label>
+      <input type="text" id="targetDeviceId" class="input-text mono-num" placeholder="Ví dụ: E59AEBCBD7FC1310 (để trống nếu muốn tạo khóa dùng chung)">
+      <span style="font-size: 0.75rem; color: var(--text-muted);">
+        Khách hàng mở app bấm vào nút <strong>Bản Quyền</strong> ➔ <strong>Copy Mã Máy</strong> rồi gửi cho bạn.
+      </span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div class="form-group">
+        <label>Gói Bản Quyền (Edition):</label>
+        <select id="editionSelect" class="curriculum-dropdown" style="width: 100%;">
+          <option value="ACADEMIC_PRO">ACADEMIC_PRO (Học sinh & Nghiên cứu)</option>
+          <option value="ENTERPRISE_PRO" selected>ENTERPRISE_PRO (Trường học & Doanh nghiệp)</option>
+          <option value="RESEARCH_MAX">RESEARCH_MAX (Tối thượng Lab AI)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Thời Hạn Bản Quyền:</label>
+        <select id="durationSelect" class="curriculum-dropdown" style="width: 100%;">
+          <option value="30">30 Ngày (Dùng thử VIP)</option>
+          <option value="365" selected>1 Năm (365 Ngày)</option>
+          <option value="730">2 Năm (730 Ngày)</option>
+          <option value="3650">Vĩnh Viễn (10 Năm)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Master Salt Bí Mật Của Tác Giả:</label>
+      <input type="password" id="masterSalt" class="input-text mono-num" value="smart-ai-agplv3-tai-anh-2026">
+    </div>
+
+    <button id="btnGenerateKey" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+      🔑 TẠO KHÓA BẢN QUYỀN ĐỘC QUYỀN
+    </button>
+
+    <div id="outputSection" style="display: none; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border-divider);">
+      <label style="font-size: 0.85rem; font-weight: 700; color: var(--status-success);">
+        ✅ Khóa Bản Quyền Đã Được Ký Số (HMAC-SHA256):
+      </label>
+      <div style="display: flex; gap: 8px; margin-top: 6px;">
+        <input type="text" id="generatedKeyOutput" class="input-text mono-num" readonly style="font-weight: 700; background: var(--bg-surface-subtle); color: var(--accent-primary);">
+        <button id="btnCopyKey" class="btn btn-secondary btn-sm" style="white-space: nowrap;">📋 Copy Key</button>
+      </div>
+
+      <div id="keySummaryText" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 8px; line-height: 1.4;"></div>
+    </div>
+  </div>
+
+  <script>
+    async function computeHash(message) {
+      const msgUint8 = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    document.getElementById('btnGenerateKey').addEventListener('click', async () => {
+      const edition = document.getElementById('editionSelect').value;
+      const days = parseInt(document.getElementById('durationSelect').value, 10);
+      const salt = document.getElementById('masterSalt').value.trim();
+      const rawDevice = document.getElementById('targetDeviceId').value.trim();
+
+      const expiry = Date.now() + (days * 86400000);
+      const expiryHex = expiry.toString(16).toUpperCase();
+
+      let keyStr = '';
+      let summary = '';
+
+      if (rawDevice) {
+        // Device-bound key: SMART-[EDITION]-[DEV_ID]-[EXPIRY]-[SIG]
+        const devPart = rawDevice.substring(0, 8).toUpperCase();
+        const payload = `${edition}:${devPart}:${expiryHex}:${salt}`;
+        const sig = (await computeHash(payload)).substring(0, 8).toUpperCase();
+        keyStr = `SMART-${edition}-${devPart}-${expiryHex}-${sig}`;
+        summary = `Khóa được <strong>khóa cứng theo thiết bị mã [${devPart}]</strong>. Chỉ máy của khách hàng mới kích hoạt được, nếu họ gửi key này cho người khác máy khác sẽ bị từ chối!`;
+      } else {
+        // Universal key: SMART-[EDITION]-[EXPIRY]-[SIG]
+        const payload = `${edition}:${expiryHex}:${salt}`;
+        const sig = (await computeHash(payload)).substring(0, 8).toUpperCase();
+        keyStr = `SMART-${edition}-${expiryHex}-${sig}`;
+        summary = `Khóa dùng chung (Universal). Có thể kích hoạt trên mọi thiết bị đến ngày hết hạn.`;
+      }
+
+      const outSec = document.getElementById('outputSection');
+      outSec.style.display = 'block';
+      document.getElementById('generatedKeyOutput').value = keyStr;
+      document.getElementById('keySummaryText').innerHTML = `
+        • <strong>Hạn dùng:</strong> ${new Date(expiry).toLocaleDateString('vi-VN')} (${days} ngày)<br>
+        • <strong>Cơ chế:</strong> ${summary}
+      `;
+    });
+
+    document.getElementById('btnCopyKey').addEventListener('click', () => {
+      const input = document.getElementById('generatedKeyOutput');
+      input.select();
+      navigator.clipboard.writeText(input.value).then(() => {
+        alert('Đã sao chép Khóa Bản Quyền! Bạn có thể gửi mã này cho khách hàng.');
+      });
+    });
+  </script>
+</body>
+</html>

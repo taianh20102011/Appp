@@ -502,13 +502,18 @@
           </div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border-divider); padding-top: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border-divider); padding-top: 8px;">
           <span>Vân tay thiết bị (Hardware Fingerprint):</span>
-          <span class="mono-num" id="deviceFingerprintText">Đang tính...</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="mono-num font-semibold" id="deviceFingerprintText" style="color: var(--text-primary);">Đang tính...</span>
+            <button class="btn btn-secondary btn-sm" id="copyFingerprintBtn" style="padding: 2px 8px; font-size: 0.72rem;" title="Sao chép mã máy">📋 Copy Mã Máy</button>
+          </div>
         </div>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
+          💡 <em>Lưu ý bảo mật:</em> Mỗi khóa bản quyền được gắn chặt với <strong>Mã vân tay thiết bị</strong> của máy bạn. Để mua hoặc gia hạn bản quyền, hãy sao chép Mã máy ở trên gửi cho Tác giả <strong>Tài Anh</strong> (<a href="mailto:phamngoctaianh6@gmail.com" style="color: var(--accent-primary);">phamngoctaianh6@gmail.com</a>).
+        </p>
       </div>
-      <div style="display: flex; justify-content: space-between; margin-top: 8px;">
-        <button class="btn btn-secondary btn-sm" id="genSampleLicenseBtn">Tạo Khóa Bản Quyền Mới</button>
+      <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
         <button class="btn btn-secondary btn-sm" onclick="document.getElementById('licenseModal').classList.remove('open')">Đóng</button>
       </div>
     </div>

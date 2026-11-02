@@ -106,7 +106,7 @@
     elements.verifyLicenseBtn = document.getElementById('verifyLicenseBtn');
     elements.licenseVerifyMsg = document.getElementById('licenseVerifyMsg');
     elements.deviceFingerprintText = document.getElementById('deviceFingerprintText');
-    elements.genSampleLicenseBtn = document.getElementById('genSampleLicenseBtn');
+    elements.copyFingerprintBtn = document.getElementById('copyFingerprintBtn');
 
     elements.geminiModal = document.getElementById('geminiModal');
     elements.closeGeminiModal = document.getElementById('closeGeminiModal');
@@ -386,8 +386,13 @@
       if (elements.deviceFingerprintText) {
         elements.deviceFingerprintText.textContent = await SmartSecurity.getDeviceFingerprint();
       }
-      if (!elements.licenseKeyInput.value) {
-        elements.licenseKeyInput.value = await SmartSecurity.generateLicenseKey('ACADEMIC_PRO', 365);
+      const savedKey = localStorage.getItem('smart_license_key');
+      if (savedKey) {
+        elements.licenseKeyInput.value = savedKey;
+        elements.verifyLicenseBtn.click();
+      } else {
+        elements.licenseVerifyMsg.innerHTML = 'ℹ️ Chưa nhập khóa kích hoạt. Hãy liên hệ Tác giả Tài Anh để nhận mã.';
+        elements.licenseVerifyMsg.style.color = 'var(--text-muted)';
       }
       elements.licenseModal.classList.add('open');
     });
@@ -395,21 +400,32 @@
       elements.licenseModal.classList.remove('open');
     });
 
+    elements.copyFingerprintBtn?.addEventListener('click', () => {
+      const fp = elements.deviceFingerprintText.textContent;
+      if (navigator.clipboard && fp) {
+        navigator.clipboard.writeText(fp).then(() => {
+          showToast('Đã sao chép Mã máy! Hãy gửi cho Tác giả Tài Anh.', 'success');
+        });
+      }
+    });
+
     elements.verifyLicenseBtn?.addEventListener('click', async () => {
       const key = elements.licenseKeyInput.value.trim();
+      if (!key) {
+        elements.licenseVerifyMsg.innerHTML = '⚠️ Vui lòng dán mã bản quyền cần kích hoạt vào ô trên.';
+        elements.licenseVerifyMsg.style.color = 'var(--status-warning)';
+        return;
+      }
       const res = await SmartSecurity.verifyLicenseKey(key);
       if (res.valid) {
-        elements.licenseVerifyMsg.innerHTML = `✅ Bản quyền hợp lệ: Gói <strong>${res.edition}</strong> | Hạn dùng: <strong>${res.expiryDate}</strong> | Tác giả: <strong>${res.author}</strong>`;
+        localStorage.setItem('smart_license_key', key);
+        elements.licenseVerifyMsg.innerHTML = `✅ Bản quyền hợp lệ: Gói <strong>${res.edition}</strong> (${res.deviceBound})<br>Hạn dùng: <strong>${res.expiryDate}</strong> | Tác giả: <strong>${res.author}</strong>`;
         elements.licenseVerifyMsg.style.color = 'var(--status-success)';
+        showToast('Kích hoạt bản quyền thành công!', 'success');
       } else {
         elements.licenseVerifyMsg.innerHTML = `❌ ${res.reason}`;
         elements.licenseVerifyMsg.style.color = 'var(--status-danger)';
       }
-    });
-
-    elements.genSampleLicenseBtn?.addEventListener('click', async () => {
-      elements.licenseKeyInput.value = await SmartSecurity.generateLicenseKey('ENTERPRISE_PRO', 730);
-      elements.verifyLicenseBtn.click();
     });
 
     // Gemini Settings Modal

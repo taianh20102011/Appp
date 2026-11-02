@@ -143,37 +143,61 @@ const SmartSecurity = (function () {
   }
 
   /**
-   * Cryptographic License Key Generator & Validator (HMAC-SHA256)
-   * Pattern: SMART-[EDITION]-[EXPIRY_HEX]-[SIGNATURE_8]
+   * Cryptographic License Key Validator (HMAC-SHA256 with Device Fingerprint Binding)
+   * Pattern A (Device-Bound): SMART-[EDITION]-[DEV_ID_8]-[EXPIRY_HEX]-[SIGNATURE_8]
+   * Pattern B (Universal):    SMART-[EDITION]-[EXPIRY_HEX]-[SIGNATURE_8]
    */
   const LICENSE_MASTER_SALT = 'smart-ai-agplv3-tai-anh-2026';
-
-  async function generateLicenseKey(edition = 'ACADEMIC_PRO', days = 365) {
-    const expiry = Date.now() + (days * 86400000);
-    const expiryHex = expiry.toString(16).toUpperCase();
-    const payload = `${edition}:${expiryHex}:${LICENSE_MASTER_SALT}`;
-    const sig = (await computeHash(payload)).substring(0, 8).toUpperCase();
-    return `SMART-${edition}-${expiryHex}-${sig}`;
-  }
 
   async function verifyLicenseKey(keyStr) {
     if (!keyStr || typeof keyStr !== 'string') {
       return { valid: false, reason: 'Khóa bản quyền không hợp lệ' };
     }
     const parts = keyStr.trim().split('-');
-    if (parts.length !== 4 || parts[0] !== 'SMART') {
-      return { valid: false, reason: 'Định dạng mã bản quyền không đúng cấu trúc' };
+    if (parts[0] !== 'SMART' || (parts.length !== 4 && parts.length !== 5)) {
+      return { valid: false, reason: 'Định dạng mã bản quyền không đúng cấu trúc chuẩn SMART-[...]' };
     }
 
-    const edition = parts[1];
-    const expiryHex = parts[2];
-    const signature = parts[3];
+    const currentDeviceId = (await getDeviceFingerprint()).substring(0, 8).toUpperCase();
 
-    const expectedPayload = `${edition}:${expiryHex}:${LICENSE_MASTER_SALT}`;
-    const expectedSig = (await computeHash(expectedPayload)).substring(0, 8).toUpperCase();
+    let edition = '';
+    let expiryHex = '';
+    let signature = '';
+    let devPart = '';
 
-    if (signature !== expectedSig) {
-      return { valid: false, reason: 'Chữ ký mật mã không hợp lệ hoặc đã bị chỉnh sửa trái phép' };
+    if (parts.length === 5) {
+      // Device-Bound format: SMART-[EDITION]-[DEV_ID]-[EXPIRY]-[SIG]
+      edition = parts[1];
+      devPart = parts[2].toUpperCase();
+      expiryHex = parts[3];
+      signature = parts[4];
+
+      // Verify that this key was issued for this specific machine
+      if (devPart !== 'UNIVERSAL' && devPart !== currentDeviceId) {
+        return {
+          valid: false,
+          reason: `Khóa này chỉ cấp quyền cho thiết bị mã [${devPart}], không khớp với thiết bị hiện tại [${currentDeviceId}]!`
+        };
+      }
+
+      const expectedPayload = `${edition}:${devPart}:${expiryHex}:${LICENSE_MASTER_SALT}`;
+      const expectedSig = (await computeHash(expectedPayload)).substring(0, 8).toUpperCase();
+
+      if (signature !== expectedSig) {
+        return { valid: false, reason: 'Chữ ký mật mã không hợp lệ hoặc đã bị chỉnh sửa trái phép' };
+      }
+    } else {
+      // Universal format: SMART-[EDITION]-[EXPIRY]-[SIG]
+      edition = parts[1];
+      expiryHex = parts[2];
+      signature = parts[3];
+
+      const expectedPayload = `${edition}:${expiryHex}:${LICENSE_MASTER_SALT}`;
+      const expectedSig = (await computeHash(expectedPayload)).substring(0, 8).toUpperCase();
+
+      if (signature !== expectedSig) {
+        return { valid: false, reason: 'Chữ ký mật mã không hợp lệ hoặc đã bị chỉnh sửa trái phép' };
+      }
     }
 
     const expiryTime = parseInt(expiryHex, 16);
@@ -184,6 +208,7 @@ const SmartSecurity = (function () {
     return {
       valid: true,
       edition,
+      deviceBound: devPart ? (devPart === 'UNIVERSAL' ? 'Tất cả thiết bị' : `Khóa theo máy [${devPart}]`) : 'Chung',
       expiryDate: new Date(expiryTime).toLocaleDateString('vi-VN'),
       author: 'Tài Anh (phamngoctaianh6@gmail.com)',
       licenseType: 'GNU AGPLv3 + Cryptographic Node License'
@@ -215,7 +240,6 @@ const SmartSecurity = (function () {
     checkRateLimit,
     auditSecurityPosture,
     getDeviceFingerprint,
-    generateLicenseKey,
     verifyLicenseKey
   };
 })();
