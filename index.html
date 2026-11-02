@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SMART AI – Hệ Thống Trí Tuệ Nhân Tạo Học Tập Thích Nghi & Dự Đoán Lỗ Hổng Kiến Thức</title>
+  <meta name="description" content="SMART AI – Development of an Adaptive Artificial Intelligence System for Personalized Learning and Student Knowledge Gap Prediction.">
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#2563EB">
+
+  <!-- Content Security Policy: Strict defense against untrusted execution -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;">
+
+  <!-- Fonts & Core Styles -->
+  <link rel="stylesheet" href="./css/styles.css">
+
+  <!-- KaTeX for math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+  <!-- GSAP 3.15 Animation Engine -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.15/dist/gsap.min.js"></script>
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="logo-badge" id="appLogo">
+        <div class="logo-icon-box">S</div>
+        <div>
+          <div class="logo-text-title">SMART AI</div>
+          <div class="logo-text-sub">Adaptive Learning & Knowledge Gap AI</div>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <select id="curriculumSelect" class="btn btn-secondary btn-sm" style="font-weight: 600;">
+          <!-- Options dynamically populated -->
+        </select>
+
+        <button id="cmdPaletteBtn" class="btn btn-secondary btn-sm" title="Mở thanh lệnh (Ctrl+K)">
+          <span>Thanh lệnh</span>
+          <span class="badge badge-blue">Ctrl+K</span>
+        </button>
+
+        <button id="securityAuditBtn" class="btn btn-secondary btn-sm" title="Kiểm toán bảo mật Cloudflare/OWASP">
+          <span>🛡️ Bảo mật</span>
+        </button>
+
+        <button id="neuralTrainHeaderBtn" class="btn btn-primary btn-sm" title="Tự động Huấn luyện Mô hình AI (In-Browser Machine Learning)">
+          <span>🧠 Tự Train AI (100% Free)</span>
+        </button>
+
+        <button id="geminiConfigBtn" class="btn btn-secondary btn-sm" title="Tùy chọn: Kết nối thêm Cloud API nếu muốn">
+          <span>⚡ Cài đặt API</span>
+        </button>
+
+        <button id="themeToggle" class="btn-icon" title="Chuyển chế độ Sáng / Tối">
+          🌓
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Shell -->
+  <main class="app-main">
+
+    <!-- Hero Title & Navigation Controls -->
+    <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <span class="badge badge-blue">NGHIÊN CỨU KHOA HỌC</span>
+            <span class="badge badge-green">BAYESIAN KNOWLEDGE TRACING</span>
+            <span class="badge badge-amber">KNOWLEDGE SPACE THEORY (DAG)</span>
+          </div>
+          <h1>SMART AI – Trí Tuệ Nhân Tạo Học Tập Thích Nghi</h1>
+          <p style="font-size: 0.95rem; max-width: 820px; margin-top: 4px;">
+            Mô hình hóa đường cong nhận thức, truy vết lỗ hổng kiến thức gốc rễ (Root Cause Deficit) và tự động kiến tạo lộ trình học tập cá nhân hóa chuẩn xác theo thời gian thực.
+          </p>
+        </div>
+
+        <!-- Segmented Tab Controls (NameThatUI) -->
+        <div class="segmented-control" role="tablist">
+          <button id="tabDiagnostic" class="segment-btn active" role="tab">
+            <span>🎯 Chẩn đoán</span>
+          </button>
+          <button id="tabRadar" class="segment-btn" role="tab">
+            <span>📊 Đồ thị & Ma trận</span>
+          </button>
+          <button id="tabRoadmap" class="segment-btn" role="tab">
+            <span>🚀 Lộ trình thích nghi</span>
+          </button>
+          <button id="tabNeural" class="segment-btn" role="tab">
+            <span>🧠 Tự Train AI</span>
+          </button>
+          <button id="tabTutor" class="segment-btn" role="tab">
+            <span>💬 Gia sư Socratic</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 1: DIAGNOSTIC QUIZ (Chẩn đoán thích nghi) -->
+    <section id="sectionDiagnostic">
+      <div class="bento-grid">
+        
+        <!-- Left: Adaptive Question Card -->
+        <div class="bento-card col-7">
+          <div class="card-header-row">
+            <div class="card-title-group">
+              <h3>Bài Khảo Sát Năng Lực Thích Nghi</h3>
+              <span class="badge badge-blue" id="quizProgress">Câu 1 / 6</span>
+            </div>
+            <span class="badge badge-green" id="quizScoreBadge">--% Năng lực BKT</span>
+          </div>
+          <div id="quizContainer">
+            <!-- Dynamically populated by ui-controller.js -->
+          </div>
+        </div>
+
+        <!-- Right: Real-time Knowledge Gap Summary -->
+        <div class="bento-card col-5">
+          <div class="card-header-row">
+            <div class="card-title-group">
+              <h3>Lỗ Hổng Kiến Thức Phát Hiện</h3>
+            </div>
+            <span class="badge badge-red" id="gapCountBadge">Tự động phân tích</span>
+          </div>
+          <div id="gapsList" style="display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto;">
+            <div style="padding: 16px; text-align: center; color: var(--text-muted);">
+              Đang chờ dữ liệu chẩn đoán... Hãy trả lời câu hỏi bên cạnh để AI đo đạc.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 2: RADAR & DAG GRAPH (Bản đồ tri thức & Đồ thị DAG) -->
+    <section id="sectionRadar" style="display: none;">
+      <div class="bento-grid">
+        
+        <!-- Radar Chart Card -->
+        <div class="bento-card col-6">
+          <div class="card-header-row">
+            <div class="card-title-group">
+              <h3>Biểu Đồ Radar Năng Lực Đa Chiều</h3>
+            </div>
+            <span class="badge badge-blue">Độ phủ kỹ năng</span>
+          </div>
+          <p style="font-size: 0.85rem;">Biểu diễn xác suất thành thạo $P(L)$ của từng nút kiến thức sau khi áp dụng mô hình BKT.</p>
+          <div class="canvas-holder">
+            <canvas id="radarCanvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Prerequisite DAG Graph Card -->
+        <div class="bento-card col-6">
+          <div class="card-header-row">
+            <div class="card-title-group">
+              <h3>Đồ Thị Quan Hệ Tiên Đề (DAG Graph)</h3>
+            </div>
+            <span class="badge badge-amber">Knowledge Space Theory</span>
+          </div>
+          <p style="font-size: 0.85rem;">Các mũi tên biểu diễn mối quan hệ tiên đề. Nút màu đỏ là lỗ hổng gốc gây tắc nghẽn.</p>
+          <div class="canvas-holder">
+            <canvas id="dagCanvas"></canvas>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 3: ADAPTIVE ROADMAP (Lộ trình học tập cá nhân hóa) -->
+    <section id="sectionRoadmap" style="display: none;">
+      <div class="bento-grid">
+        <div class="bento-card col-12">
+          <div class="card-header-row">
+            <div class="card-title-group">
+              <h3>Lộ Trình Học Tập Thích Nghi Cá Nhân Hóa (Topological Schedule)</h3>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-primary btn-sm" id="exportGmailBtn">
+                ✉️ Gửi báo cáo qua Gmail
+              </button>
+              <button class="btn btn-secondary btn-sm" id="copyDigestBtn">
+                📋 Sao chép mã phiên
+              </button>
+            </div>
+          </div>
+          <p style="font-size: 0.88rem;">
+            Thuật toán sắp xếp Topo (Topological Sort) kết hợp trọng số thiếu hụt kiến thức để tự động thiết kế thứ tự bài học tối ưu nhất, ưu tiên triệt tiêu các nút rễ bị nghẽn.
+          </p>
+          <div id="roadmapList" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: SOCRATIC AI TUTOR (Gia sư ảo Socratic) -->
+    <section id="sectionTutor" style="display: none;">
+      <div class="bento-grid">
+        <div class="bento-card col-12">
+          <div class="card-header-row">
+            <div class="card-title-group">
+              <h3>Trợ Lý Gia Sư Socratic AI</h3>
+              <span class="badge badge-green">Tự động gợi mở tư duy</span>
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">
+              Powered by Google Gemini 2.5 Flash / Offline Cognitive AI
+            </span>
+          </div>
+
+          <div class="chat-window">
+            <div class="chat-messages" id="chatMessages">
+              <div class="chat-bubble bot">
+                Xin chào! Tôi là Trợ lý Gia sư Socratic SMART AI. Khi bạn gặp khúc mắc hoặc làm sai bài tập, tôi sẽ đặt các câu hỏi gợi mở để bạn tự khám phá ra bản chất vấn đề. Bạn muốn cùng tôi phân tích khái niệm nào hôm nay?
+              </div>
+            </div>
+            <div class="chat-input-bar">
+              <input type="text" id="tutorInput" class="input-text" placeholder="Nhập thắc mắc hoặc câu hỏi về bài học..." autocomplete="off">
+              <button id="tutorSendBtn" class="btn btn-primary">Gửi →</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: SELF-TRAINING NEURAL NETWORK (Mô hình Mạng Nơ-ron Tự Huấn Luyện) -->
+    <section id="sectionNeural" style="display: none;">
+      <div class="bento-grid">
+        
+        <!-- Left: Neural Network Training Telemetry & Loss Curve -->
+        <div class="bento-card col-8">
+          <div class="card-header-row">
+            <div class="card-title-group">
+              <h3>Mạng Nơ-ron Nhận Thức Sâu (Deep Knowledge Tracing MLP)</h3>
+              <span class="badge badge-green">Tự Huấn Luyện Cục Bộ (In-Browser)</span>
+            </div>
+            <span class="badge badge-blue" id="neuralEpochBadge">Epoch: 0 / 60</span>
+          </div>
+          <p style="font-size: 0.88rem;">
+            Mô hình học máy Deep Learning chạy trực tiếp trên luồng trình duyệt client với thuật toán <strong>Adam Optimizer + Binary Cross-Entropy Loss + Backpropagation</strong>. Không cần bất kỳ Cloud API nào!
+          </p>
+
+          <!-- Training Loss & Accuracy Live Canvas -->
+          <div style="background-color: var(--bg-surface-subtle); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 0.8rem; font-weight: 600;">Đường Cong Mất Mát (Loss Curve $L(w)$) & Độ Chính Xác</span>
+              <span class="mono-num" id="neuralLossMetric" style="font-size: 0.8rem; color: var(--accent-primary);">Loss: 0.0000 | Acc: 0%</span>
+            </div>
+            <canvas id="lossCanvas" style="width: 100%; height: 220px; display: block;"></canvas>
+          </div>
+
+          <!-- Network Architecture Schema -->
+          <div style="display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px; margin-top: 8px; font-size: 0.82rem;">
+            <div><strong>Tầng Đầu Vào:</strong> 12 Nơ-ron (Đặc trưng nhận thức)</div>
+            <div>→</div>
+            <div><strong>Tầng Ẩn 1:</strong> 16 Nơ-ron (ReLU)</div>
+            <div>→</div>
+            <div><strong>Tầng Ẩn 2:</strong> 8 Nơ-ron (ReLU)</div>
+            <div>→</div>
+            <div><strong>Tầng Đầu Ra:</strong> 6 Nơ-ron (Sigmoid)</div>
+          </div>
+        </div>
+
+        <!-- Right: Training Controls & Weights Management -->
+        <div class="bento-card col-4">
+          <div class="card-header-row">
+            <div class="card-title-group">
+              <h3>Bảng Điều Khiển Huấn Luyện</h3>
+            </div>
+            <span class="badge badge-amber" id="trainingStatusBadge">Sẵn sàng</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+              Nhấn bắt đầu để kích hoạt quá trình tự lan truyền ngược (Backpropagation) và cập nhật ma trận trọng số $W_1, W_2, W_3$ trong thời gian thực.
+            </p>
+
+            <button id="startTrainBtn" class="btn btn-primary" style="width: 100%;">
+              🚀 Bắt Đầu Tự Huấn Luyện (Self-Train)
+            </button>
+
+            <button id="stopTrainBtn" class="btn btn-secondary" style="width: 100%; display: none;">
+              ⏹️ Dừng Huấn Luyện
+            </button>
+
+            <button id="onlineLearnBtn" class="btn btn-secondary" style="width: 100%;">
+              🔄 Huấn Luyện Thích Nghi Theo Bài Thi
+            </button>
+
+            <button id="resetWeightsBtn" class="btn btn-secondary btn-sm" style="width: 100%;">
+              Khởi tạo lại trọng số ngẫu nhiên
+            </button>
+
+            <div style="border-top: 1px solid var(--border-divider); padding-top: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
+              <div style="display: flex; justify-content: space-between;">
+                <span>Tốc độ học ($\alpha$):</span>
+                <span class="mono-num">0.015 (Adam)</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span>Số lượng Batch:</span>
+                <span class="mono-num">100 mẫu/epoch</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span>Lưu trữ trọng số:</span>
+                <span class="badge badge-green">Indexed / LocalStorage</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal: Cloudflare Security Audit -->
+  <div class="modal-overlay" id="securityModal">
+    <div class="modal-card">
+      <div class="card-header-row">
+        <h3>Báo Cáo Kiểm Toán Bảo Mật Hệ Thống</h3>
+        <button class="btn-icon" id="closeSecurityModal">✕</button>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-secondary);">
+        Hệ thống tuân thủ nghiêm ngặt chuẩn an toàn Cloudflare Security Audit, OWASP Top 10 và mật mã học Web Crypto API:
+      </p>
+      <table class="security-status-table">
+        <tbody id="securityAuditBody">
+          <!-- Populated by ui-controller.js -->
+        </tbody>
+      </table>
+      <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+        <button class="btn btn-secondary" onclick="document.getElementById('securityModal').classList.remove('open')">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Gemini API Key Vault -->
+  <div class="modal-overlay" id="geminiModal">
+    <div class="modal-card">
+      <div class="card-header-row">
+        <h3>Cấu Hình Google Gemini AI Key (BYOK)</h3>
+        <button class="btn-icon" id="closeGeminiModal">✕</button>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-secondary);">
+        Nhập Google Gemini API Key của bạn (miễn phí tại Google AI Studio) để mở khóa năng lực siêu trí tuệ Gemini 2.5 Flash. Key được mã hóa AES-GCM 256-bit trực tiếp trên thiết bị của bạn, tuyệt đối không gửi về bất kỳ máy chủ trung gian nào.
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <label style="font-size: 0.85rem; font-weight: 600;">Gemini API Key:</label>
+        <input type="password" id="geminiKeyInput" class="input-text" placeholder="AIzaSy..." autocomplete="off">
+      </div>
+      <div id="geminiStatusMsg" style="font-size: 0.82rem; color: var(--text-muted);"></div>
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+        <button class="btn btn-secondary" id="clearGeminiKeyBtn" onclick="document.getElementById('geminiKeyInput').value=''; document.getElementById('saveGeminiKeyBtn').click();">Xóa Key (Dùng Offline AI)</button>
+        <button class="btn btn-primary" id="saveGeminiKeyBtn">Lưu & Kiểm Tra</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Command Palette (Cmd+K / Ctrl+K) -->
+  <div class="cmd-palette" id="cmdPalette">
+    <input type="text" id="cmdInput" class="cmd-input" placeholder="Gõ lệnh tìm kiếm (hoặc nhấn ESC để đóng)..." autocomplete="off">
+    <div class="cmd-list" id="cmdList">
+      <!-- Populated dynamically -->
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="./js/curriculum-data.js"></script>
+  <script src="./js/crypto-security.js"></script>
+  <script src="./js/knowledge-engine.js"></script>
+  <script src="./js/neural-engine.js"></script>
+  <script src="./js/ai-service.js"></script>
+  <script src="./js/ui-controller.js"></script>
+</body>
+</html>

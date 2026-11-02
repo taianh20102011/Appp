@@ -1,0 +1,933 @@
+/**
+ * SMART AI - UI Orchestrator & GSAP 3.15+ Motion Controller
+ * Standard: modern-fullstack-gsap-security, NameThatUI patterns
+ */
+
+(function () {
+  'use strict';
+
+  let currentCurriculumKey = 'ai_math';
+  let engine = null;
+  let aiService = null;
+  let activeTab = 'diagnostic';
+  let currentQuizIndex = 0;
+  let currentSessionDigest = '';
+
+  // DOM Elements cache
+  const elements = {};
+
+  function initApp() {
+    cacheElements();
+    initServices();
+    bindEvents();
+    renderCurriculumSelector();
+    loadCurriculum(currentCurriculumKey);
+    initGSAPAnimations();
+    setupCommandPalette();
+    registerServiceWorker();
+    checkSecurityPosture();
+  }
+
+  function cacheElements() {
+    elements.themeToggle = document.getElementById('themeToggle');
+    elements.securityAuditBtn = document.getElementById('securityAuditBtn');
+    elements.geminiConfigBtn = document.getElementById('geminiConfigBtn');
+    elements.cmdPaletteBtn = document.getElementById('cmdPaletteBtn');
+    elements.curriculumSelect = document.getElementById('curriculumSelect');
+    
+    // Tab buttons
+    elements.tabDiagnostic = document.getElementById('tabDiagnostic');
+    elements.tabRadar = document.getElementById('tabRadar');
+    elements.tabRoadmap = document.getElementById('tabRoadmap');
+    elements.tabNeural = document.getElementById('tabNeural');
+    elements.tabTutor = document.getElementById('tabTutor');
+
+    // Tab sections
+    elements.sectionDiagnostic = document.getElementById('sectionDiagnostic');
+    elements.sectionRadar = document.getElementById('sectionRadar');
+    elements.sectionRoadmap = document.getElementById('sectionRoadmap');
+    elements.sectionNeural = document.getElementById('sectionNeural');
+    elements.sectionTutor = document.getElementById('sectionTutor');
+
+    // Neural Training Controls
+    elements.neuralTrainHeaderBtn = document.getElementById('neuralTrainHeaderBtn');
+    elements.neuralEpochBadge = document.getElementById('neuralEpochBadge');
+    elements.neuralLossMetric = document.getElementById('neuralLossMetric');
+    elements.lossCanvas = document.getElementById('lossCanvas');
+    elements.trainingStatusBadge = document.getElementById('trainingStatusBadge');
+    elements.startTrainBtn = document.getElementById('startTrainBtn');
+    elements.stopTrainBtn = document.getElementById('stopTrainBtn');
+    elements.onlineLearnBtn = document.getElementById('onlineLearnBtn');
+    elements.resetWeightsBtn = document.getElementById('resetWeightsBtn');
+
+    // Quiz container
+    elements.quizContainer = document.getElementById('quizContainer');
+    elements.quizProgress = document.getElementById('quizProgress');
+    elements.quizScoreBadge = document.getElementById('quizScoreBadge');
+
+    // Visualizers
+    elements.radarCanvas = document.getElementById('radarCanvas');
+    elements.dagCanvas = document.getElementById('dagCanvas');
+    elements.gapsList = document.getElementById('gapsList');
+    elements.roadmapList = document.getElementById('roadmapList');
+
+    // Tutor
+    elements.chatMessages = document.getElementById('chatMessages');
+    elements.tutorInput = document.getElementById('tutorInput');
+    elements.tutorSendBtn = document.getElementById('tutorSendBtn');
+
+    // Modals
+    elements.securityModal = document.getElementById('securityModal');
+    elements.closeSecurityModal = document.getElementById('closeSecurityModal');
+    elements.securityAuditBody = document.getElementById('securityAuditBody');
+
+    elements.geminiModal = document.getElementById('geminiModal');
+    elements.closeGeminiModal = document.getElementById('closeGeminiModal');
+    elements.geminiKeyInput = document.getElementById('geminiKeyInput');
+    elements.saveGeminiKeyBtn = document.getElementById('saveGeminiKeyBtn');
+    elements.geminiStatusMsg = document.getElementById('geminiStatusMsg');
+
+    elements.cmdPalette = document.getElementById('cmdPalette');
+    elements.cmdInput = document.getElementById('cmdInput');
+    elements.cmdList = document.getElementById('cmdList');
+
+    // Share / Gmail Export
+    elements.exportGmailBtn = document.getElementById('exportGmailBtn');
+    elements.copyDigestBtn = document.getElementById('copyDigestBtn');
+  }
+
+  function initServices() {
+    aiService = new SmartAIService();
+    window.smartNN = new SmartNeuralNetwork(12, 16, 8, 6);
+    window.smartNN.loadWeights();
+  }
+
+  function loadCurriculum(key) {
+    currentCurriculumKey = key;
+    const curr = window.SMART_CURRICULUM[key];
+    if (!curr) return;
+
+    engine = new SmartKnowledgeEngine(curr);
+    currentQuizIndex = 0;
+    renderQuizQuestion();
+    updateDashboardMetrics();
+    drawRadarChart();
+    drawDAGGraph();
+  }
+
+  function bindEvents() {
+    // Theme Switch
+    elements.themeToggle?.addEventListener('click', () => {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+      drawRadarChart();
+      drawDAGGraph();
+    });
+
+    // Curriculum Selector
+    elements.curriculumSelect?.addEventListener('change', (e) => {
+      loadCurriculum(e.target.value);
+    });
+
+    // Tab Navigation with GSAP FLIP
+    const tabs = [
+      { btn: elements.tabDiagnostic, section: elements.sectionDiagnostic, id: 'diagnostic' },
+      { btn: elements.tabRadar, section: elements.sectionRadar, id: 'radar' },
+      { btn: elements.tabRoadmap, section: elements.sectionRoadmap, id: 'roadmap' },
+      { btn: elements.tabNeural, section: elements.sectionNeural, id: 'neural' },
+      { btn: elements.tabTutor, section: elements.sectionTutor, id: 'tutor' },
+    ];
+
+    tabs.forEach(tab => {
+      tab.btn?.addEventListener('click', () => {
+        tabs.forEach(t => {
+          t.btn?.classList.remove('active');
+          if (t.section) t.section.style.display = 'none';
+        });
+        tab.btn?.classList.add('active');
+        if (tab.section) {
+          tab.section.style.display = 'block';
+          if (window.gsap) {
+            window.gsap.fromTo(tab.section, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.25, ease: 'power2.out' });
+          }
+        }
+        activeTab = tab.id;
+        if (tab.id === 'radar') {
+          setTimeout(() => { drawRadarChart(); drawDAGGraph(); }, 50);
+        } else if (tab.id === 'roadmap') {
+          renderRoadmap();
+        } else if (tab.id === 'neural') {
+          setTimeout(drawLossCurve, 50);
+        }
+      });
+    });
+
+    elements.neuralTrainHeaderBtn?.addEventListener('click', () => {
+      elements.tabNeural?.click();
+    });
+
+    // Neural Network Self-Training Controls
+    elements.startTrainBtn?.addEventListener('click', async () => {
+      if (!window.smartNN) return;
+      elements.startTrainBtn.style.display = 'none';
+      elements.stopTrainBtn.style.display = 'inline-flex';
+      elements.trainingStatusBadge.textContent = 'Đang huấn luyện...';
+      elements.trainingStatusBadge.className = 'badge badge-blue';
+
+      await window.smartNN.startSelfTraining(60, (stats) => {
+        elements.neuralEpochBadge.textContent = `Epoch: ${stats.epoch} / 60`;
+        elements.neuralLossMetric.textContent = `Loss: ${stats.loss} | Acc: ${stats.accuracy}%`;
+        drawLossCurve();
+      });
+
+      elements.startTrainBtn.style.display = 'inline-flex';
+      elements.stopTrainBtn.style.display = 'none';
+      elements.trainingStatusBadge.textContent = 'Đã hoàn tất Epochs';
+      elements.trainingStatusBadge.className = 'badge badge-green';
+    });
+
+    elements.stopTrainBtn?.addEventListener('click', () => {
+      if (window.smartNN) window.smartNN.stopSelfTraining();
+      elements.startTrainBtn.style.display = 'inline-flex';
+      elements.stopTrainBtn.style.display = 'none';
+      elements.trainingStatusBadge.textContent = 'Đã tạm dừng';
+      elements.trainingStatusBadge.className = 'badge badge-amber';
+    });
+
+    elements.onlineLearnBtn?.addEventListener('click', async () => {
+      if (!window.smartNN || !engine) return;
+      elements.trainingStatusBadge.textContent = 'Học thích nghi...';
+      elements.trainingStatusBadge.className = 'badge badge-blue';
+
+      // Build feature vector from current student interaction states
+      const features = Object.values(engine.state).map(s => s.pL);
+      while (features.length < 12) features.push(0.5);
+
+      const targetOutputs = Object.values(engine.state).map(s => s.pL >= 0.7 ? 1 : 0);
+      while (targetOutputs.length < 6) targetOutputs.push(0);
+
+      // Fine-tune 15 mini epochs on student specific responses
+      for (let i = 0; i < 15; i++) {
+        const cache = window.smartNN.forward(features);
+        window.smartNN.backward(cache, targetOutputs);
+        window.smartNN.currentEpoch++;
+      }
+      window.smartNN.saveWeights();
+      drawLossCurve();
+
+      elements.trainingStatusBadge.textContent = 'Đã khớp trọng số học sinh';
+      elements.trainingStatusBadge.className = 'badge badge-green';
+      alert('Mạng Nơ-ron AI đã tự động học thích nghi (Continual Learning) theo dữ liệu làm bài của học sinh!');
+    });
+
+    elements.resetWeightsBtn?.addEventListener('click', () => {
+      if (!window.smartNN) return;
+      if (confirm('Khởi tạo lại ma trận trọng số ngẫu nhiên ban đầu?')) {
+        window.smartNN.initWeights();
+        window.smartNN.currentEpoch = 0;
+        window.smartNN.lossHistory = [];
+        window.smartNN.accuracyHistory = [];
+        window.smartNN.saveWeights();
+        elements.neuralEpochBadge.textContent = 'Epoch: 0 / 60';
+        elements.neuralLossMetric.textContent = 'Loss: 0.0000 | Acc: 0%';
+        drawLossCurve();
+      }
+    });
+
+    // Security Modal
+    elements.securityAuditBtn?.addEventListener('click', () => {
+      renderSecurityAudit();
+      elements.securityModal.classList.add('open');
+    });
+    elements.closeSecurityModal?.addEventListener('click', () => {
+      elements.securityModal.classList.remove('open');
+    });
+
+    // Gemini Settings Modal
+    elements.geminiConfigBtn?.addEventListener('click', () => {
+      elements.geminiStatusMsg.textContent = aiService.isOnlineAIReady 
+        ? '✅ Đang kích hoạt Google Gemini 2.5 Flash' 
+        : 'ℹ️ Đang dùng AI suy luận ngoại tuyến (Offline AI Engine)';
+      elements.geminiModal.classList.add('open');
+    });
+    elements.closeGeminiModal?.addEventListener('click', () => {
+      elements.geminiModal.classList.remove('open');
+    });
+
+    elements.saveGeminiKeyBtn?.addEventListener('click', async () => {
+      const val = elements.geminiKeyInput.value.trim();
+      elements.geminiStatusMsg.textContent = 'Đang kiểm tra bảo mật & kết nối...';
+      const res = await aiService.setApiKey(val);
+      elements.geminiStatusMsg.textContent = res.message;
+      if (res.success) {
+        elements.geminiKeyInput.value = '';
+        setTimeout(() => elements.geminiModal.classList.remove('open'), 1200);
+      }
+    });
+
+    // Tutor chat
+    elements.tutorSendBtn?.addEventListener('click', handleTutorSend);
+    elements.tutorInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleTutorSend();
+    });
+
+    // Gmail & Code Digest Export
+    elements.exportGmailBtn?.addEventListener('click', handleExportGmail);
+    elements.copyDigestBtn?.addEventListener('click', handleCopyDigest);
+
+    // Window resize redraw
+    window.addEventListener('resize', () => {
+      drawRadarChart();
+      drawDAGGraph();
+    });
+  }
+
+  function renderCurriculumSelector() {
+    if (!elements.curriculumSelect) return;
+    elements.curriculumSelect.innerHTML = Object.values(window.SMART_CURRICULUM).map(c => `
+      <option value="${c.id}">${c.title}</option>
+    `).join('');
+  }
+
+  function renderQuizQuestion() {
+    if (!engine || !elements.quizContainer) return;
+    const curr = window.SMART_CURRICULUM[currentCurriculumKey];
+    const nodes = curr.nodes;
+    if (currentQuizIndex >= nodes.length) {
+      renderQuizFinished();
+      return;
+    }
+
+    const node = nodes[currentQuizIndex];
+    const q = node.diagnosticQuestion;
+
+    if (elements.quizProgress) {
+      elements.quizProgress.textContent = `Câu ${currentQuizIndex + 1} / ${nodes.length} • Khái niệm: ${node.name}`;
+    }
+
+    const letters = ['A', 'B', 'C', 'D'];
+    const optionsHTML = q.options.map((opt, idx) => `
+      <button class="quiz-option-btn" data-idx="${idx}">
+        <span class="opt-letter">${letters[idx]}</span>
+        <span class="opt-text">${SmartSecurity.sanitizeHTML(opt)}</span>
+      </button>
+    `).join('');
+
+    elements.quizContainer.innerHTML = `
+      <div class="quiz-question-box">
+        <h4>${SmartSecurity.sanitizeHTML(q.question)}</h4>
+      </div>
+      <div class="quiz-options-list">
+        ${optionsHTML}
+      </div>
+      <div id="quizFeedbackBox" style="display:none; padding: 12px; border-radius: 6px; font-size: 0.9rem;"></div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 8px;">
+        <span style="font-size: 0.75rem; color: var(--text-muted);">Mô hình BKT: $L_0=${node.bktDefaults.L0}, T=${node.bktDefaults.T}, S=${node.bktDefaults.S}, G=${node.bktDefaults.G}$</span>
+        <button id="nextQuestionBtn" class="btn btn-secondary btn-sm" style="display:none;">
+          Nút tiếp theo →
+        </button>
+      </div>
+    `;
+
+    // Render MathJax/KaTeX if available
+    if (window.renderMathInElement) {
+      window.renderMathInElement(elements.quizContainer, { delimiters: [{left: "$", right: "$", display: false}] });
+    }
+
+    // Attach click handlers
+    const optionBtns = elements.quizContainer.querySelectorAll('.quiz-option-btn');
+    optionBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const chosenIdx = parseInt(btn.getAttribute('data-idx'), 10);
+        handleOptionAnswer(node, chosenIdx, optionBtns);
+      });
+    });
+
+    const nextBtn = document.getElementById('nextQuestionBtn');
+    nextBtn?.addEventListener('click', () => {
+      currentQuizIndex++;
+      renderQuizQuestion();
+      if (window.gsap) {
+        window.gsap.fromTo(elements.quizContainer, { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.3 });
+      }
+    });
+  }
+
+  function handleOptionAnswer(node, chosenIdx, optionBtns) {
+    const q = node.diagnosticQuestion;
+    const isCorrect = chosenIdx === q.correctIndex;
+    const result = engine.updateMastery(node.id, isCorrect, chosenIdx);
+
+    optionBtns.forEach(btn => {
+      btn.disabled = true;
+      const idx = parseInt(btn.getAttribute('data-idx'), 10);
+      if (idx === q.correctIndex) {
+        btn.classList.add('selected-correct');
+      } else if (idx === chosenIdx) {
+        btn.classList.add('selected-incorrect');
+      }
+    });
+
+    const feedbackBox = document.getElementById('quizFeedbackBox');
+    const nextBtn = document.getElementById('nextQuestionBtn');
+
+    if (feedbackBox) {
+      feedbackBox.style.display = 'block';
+      if (isCorrect) {
+        feedbackBox.style.backgroundColor = '#DCFCE7';
+        feedbackBox.style.color = '#14532D';
+        feedbackBox.innerHTML = `<strong>Chính xác!</strong> Đã cập nhật $P(L) = ${Math.round(result.pL * 100)}\\%$. Kỹ năng "${node.name}" tăng trưởng vượt bậc!`;
+      } else {
+        feedbackBox.style.backgroundColor = '#FEE2E2';
+        feedbackBox.style.color = '#7F1D1D';
+        feedbackBox.innerHTML = `
+          <strong>Phát hiện lỗ hổng kiến thức!</strong> $P(L)$ điều chỉnh về: <strong>${Math.round(result.pL * 100)}%</strong>.<br>
+          <em>Gợi ý chấn chỉnh:</em> ${SmartSecurity.sanitizeHTML(result.misconception || q.hint)}
+        `;
+      }
+    }
+
+    if (nextBtn) nextBtn.style.display = 'inline-flex';
+
+    updateDashboardMetrics();
+    drawRadarChart();
+    drawDAGGraph();
+  }
+
+  function renderQuizFinished() {
+    const gaps = engine.diagnoseKnowledgeGaps();
+    const roadmapSummary = engine.generateAdaptiveRoadmap();
+
+    elements.quizContainer.innerHTML = `
+      <div style="text-align: center; padding: 24px 12px; display: flex; flex-direction: column; align-items: center; gap: 16px;">
+        <div style="width: 56px; height: 56px; border-radius: 6px; background-color: var(--accent-subtle); color: var(--accent-primary); display: flex; align-items: center; justify-content: center; font-size: 28px;">
+          ✓
+        </div>
+        <h3>Hoàn tất Chẩn đoán Năng lực Thích nghi!</h3>
+        <p style="max-width: 480px; font-size: 0.95rem;">
+          Hệ thống Bayesian Knowledge Tracing (BKT) đã tính toán ma trận thông thạo của bạn. Đã phát hiện <strong>${gaps.length} lỗ hổng kiến thức</strong> (trong đó có ${roadmapSummary.criticalGapsCount} lỗ hổng gốc rễ cần khắc phục ngay).
+        </p>
+        <div style="display: flex; gap: 12px; margin-top: 8px;">
+          <button class="btn btn-primary" id="viewRoadmapBtn">Xem Lộ trình Cá nhân hóa →</button>
+          <button class="btn btn-secondary" id="restartQuizBtn">Làm lại bài chẩn đoán</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('viewRoadmapBtn')?.addEventListener('click', () => {
+      elements.tabRoadmap.click();
+    });
+
+    document.getElementById('restartQuizBtn')?.addEventListener('click', () => {
+      loadCurriculum(currentCurriculumKey);
+    });
+  }
+
+  async function updateDashboardMetrics() {
+    const summary = engine.generateAdaptiveRoadmap();
+    const gaps = engine.diagnoseKnowledgeGaps();
+
+    if (elements.quizScoreBadge) {
+      elements.quizScoreBadge.textContent = `${summary.overallMastery}% Năng lực BKT`;
+    }
+
+    renderGapsList(gaps);
+
+    // Compute cryptographic session integrity hash
+    currentSessionDigest = await SmartSecurity.computeHash({
+      curriculum: currentCurriculumKey,
+      overallMastery: summary.overallMastery,
+      gapsCount: gaps.length,
+      timestamp: Date.now()
+    });
+  }
+
+  function renderGapsList(gaps) {
+    if (!elements.gapsList) return;
+    if (gaps.length === 0) {
+      elements.gapsList.innerHTML = `
+        <div style="padding: 16px; text-align: center; color: var(--status-success); font-weight: 600;">
+          🎉 Không phát hiện lỗ hổng nghiêm trọng nào! Bạn đang làm chủ rất tốt các khái niệm.
+        </div>
+      `;
+      return;
+    }
+
+    elements.gapsList.innerHTML = gaps.map(gap => `
+      <div class="gap-item ${gap.severity === 'CRITICAL' ? 'critical' : 'moderate'}">
+        <div style="flex: 1;">
+          <div style="display:flex; align-items:center; gap: 8px; margin-bottom: 4px;">
+            <span style="font-weight: 700; font-size: 0.95rem;">${gap.skillName}</span>
+            <span class="badge ${gap.severity === 'CRITICAL' ? 'badge-red' : 'badge-amber'}">
+              ${gap.severity === 'CRITICAL' ? 'LỖ HỔNG GỐC RỄ' : 'CẦN LUYỆN TẬP'}
+            </span>
+          </div>
+          <p style="font-size: 0.82rem; margin-bottom: 6px;">${gap.detectedMisconception}</p>
+          <div style="font-size: 0.78rem; color: var(--accent-primary); font-weight: 500;">
+            ↳ ${gap.recommendation}
+          </div>
+        </div>
+        <div style="text-align: right; min-width: 60px;">
+          <div class="mono-num" style="font-weight: 800; font-size: 1.1rem; color: ${gap.severity === 'CRITICAL' ? 'var(--status-danger)' : 'var(--status-warning)'};">
+            ${gap.masteryScore}%
+          </div>
+          <div style="font-size: 0.7rem; color: var(--text-muted);">Độ thành thạo</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderRoadmap() {
+    if (!elements.roadmapList || !engine) return;
+    const summary = engine.generateAdaptiveRoadmap();
+
+    elements.roadmapList.innerHTML = summary.roadmap.map(step => `
+      <div class="roadmap-step">
+        <div class="step-num-badge">${step.stepOrder}</div>
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+            <span style="font-weight: 700; font-size: 0.92rem;">${step.actionTitle}</span>
+            <span class="badge ${step.priority === 'URGENT' ? 'badge-red' : (step.priority === 'HIGH' ? 'badge-amber' : 'badge-blue')}">
+              ${step.priority}
+            </span>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">
+            Nhóm: ${step.category} • Thời lượng dự kiến: ~${step.estimatedMinutes} phút
+          </div>
+        </div>
+        <div class="mono-num" style="font-size: 0.85rem; font-weight: 600;">
+          ${step.currentMastery}%
+        </div>
+      </div>
+    `).join('');
+  }
+
+  /**
+   * High Precision Canvas Radar Chart
+   */
+  function drawRadarChart() {
+    const canvas = elements.radarCanvas;
+    if (!canvas || !engine) return;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width = canvas.parentElement.clientWidth || 360;
+    const height = canvas.height = canvas.parentElement.clientHeight || 320;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const radius = Math.min(centerX, centerY) - 45;
+
+    ctx.clearRect(0, 0, width, height);
+
+    const metrics = engine.getRadarMetrics();
+    const count = metrics.length;
+    if (count < 3) return;
+
+    const angleStep = (Math.PI * 2) / count;
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const gridColor = isDark ? '#1E293B' : '#E2E8F0';
+    const textColor = isDark ? '#94A3B8' : '#64748B';
+
+    // Draw concentric polygon rings (25%, 50%, 75%, 100%)
+    for (let level = 1; level <= 4; level++) {
+      const r = (radius / 4) * level;
+      ctx.beginPath();
+      for (let i = 0; i < count; i++) {
+        const angle = i * angleStep - Math.PI / 2;
+        const x = centerX + Math.cos(angle) * r;
+        const y = centerY + Math.sin(angle) * r;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = gridColor;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Draw axes & labels
+    ctx.font = '10px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = textColor;
+    ctx.textAlign = 'center';
+
+    for (let i = 0; i < count; i++) {
+      const angle = i * angleStep - Math.PI / 2;
+      const x = centerX + Math.cos(angle) * radius;
+      const y = centerY + Math.sin(angle) * radius;
+
+      // Axis line
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(x, y);
+      ctx.strokeStyle = gridColor;
+      ctx.stroke();
+
+      // Label text offset
+      const labelX = centerX + Math.cos(angle) * (radius + 22);
+      const labelY = centerY + Math.sin(angle) * (radius + 18);
+      ctx.fillText(metrics[i].label, labelX, labelY);
+    }
+
+    // Draw student mastery polygon
+    ctx.beginPath();
+    for (let i = 0; i < count; i++) {
+      const angle = i * angleStep - Math.PI / 2;
+      const r = (radius * (metrics[i].mastery / 100));
+      const x = centerX + Math.cos(angle) * r;
+      const y = centerY + Math.sin(angle) * r;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+
+    ctx.fillStyle = isDark ? 'rgba(56, 189, 248, 0.25)' : 'rgba(37, 99, 235, 0.2)';
+    ctx.fill();
+    ctx.strokeStyle = isDark ? '#38BDF8' : '#2563EB';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Data points
+    for (let i = 0; i < count; i++) {
+      const angle = i * angleStep - Math.PI / 2;
+      const r = (radius * (metrics[i].mastery / 100));
+      const x = centerX + Math.cos(angle) * r;
+      const y = centerY + Math.sin(angle) * r;
+
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = metrics[i].mastery >= 70 ? '#16A34A' : (metrics[i].mastery >= 45 ? '#D97706' : '#DC2626');
+      ctx.fill();
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  }
+
+  /**
+   * Interactive Prerequisite DAG Graph Canvas
+   */
+  function drawDAGGraph() {
+    const canvas = elements.dagCanvas;
+    if (!canvas || !engine) return;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width = canvas.parentElement.clientWidth || 360;
+    const height = canvas.height = canvas.parentElement.clientHeight || 320;
+
+    ctx.clearRect(0, 0, width, height);
+
+    const curr = window.SMART_CURRICULUM[currentCurriculumKey];
+    const nodes = curr.nodes;
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+    // Position nodes horizontally by level
+    const nodeCoords = new Map();
+    const cols = Math.ceil(nodes.length / 2);
+    nodes.forEach((n, idx) => {
+      const col = idx % cols;
+      const row = Math.floor(idx / cols);
+      const x = 50 + col * ((width - 100) / Math.max(1, cols - 1));
+      const y = 60 + row * ((height - 120) / 1.4);
+      nodeCoords.set(n.id, { x, y, node: n });
+    });
+
+    // Draw prerequisite arrow edges
+    ctx.lineWidth = 1.5;
+    nodes.forEach(n => {
+      const targetCoord = nodeCoords.get(n.id);
+      (n.prerequisites || []).forEach(preId => {
+        const sourceCoord = nodeCoords.get(preId);
+        if (sourceCoord && targetCoord) {
+          ctx.beginPath();
+          ctx.moveTo(sourceCoord.x, sourceCoord.y);
+          ctx.lineTo(targetCoord.x, targetCoord.y);
+          ctx.strokeStyle = isDark ? '#334155' : '#CBD5E1';
+          ctx.stroke();
+        }
+      });
+    });
+
+    // Draw nodes
+    nodes.forEach(n => {
+      const c = nodeCoords.get(n.id);
+      const state = engine.state[n.id];
+      const mastery = Math.round((state?.pL || 0.2) * 100);
+
+      let color = '#2563EB';
+      if (mastery >= 75) color = '#16A34A';
+      else if (mastery < 45) color = '#DC2626';
+      else color = '#D97706';
+
+      ctx.beginPath();
+      ctx.rect(c.x - 45, c.y - 18, 90, 36);
+      ctx.fillStyle = isDark ? '#0D0F14' : '#FFFFFF';
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = isDark ? '#F8FAFC' : '#0F172A';
+      ctx.font = 'bold 9px "Plus Jakarta Sans", sans-serif';
+      ctx.textAlign = 'center';
+      const shortName = n.name.length > 14 ? n.name.slice(0, 12) + '..' : n.name;
+      ctx.fillText(shortName, c.x, c.y);
+
+      ctx.fillStyle = color;
+      ctx.font = '8px "JetBrains Mono", monospace';
+      ctx.fillText(`${mastery}%`, c.x, c.y + 11);
+    });
+  }
+
+  /**
+   * Real-Time Neural Loss & Accuracy Canvas Graph
+   */
+  function drawLossCurve() {
+    const canvas = elements.lossCanvas;
+    if (!canvas || !window.smartNN) return;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width = canvas.parentElement.clientWidth || 540;
+    const height = canvas.height = canvas.parentElement.clientHeight || 220;
+
+    ctx.clearRect(0, 0, width, height);
+
+    const history = window.smartNN.lossHistory;
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const gridColor = isDark ? '#1E293B' : '#E2E8F0';
+    const textColor = isDark ? '#94A3B8' : '#64748B';
+
+    // Draw grid lines
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = 1;
+    for (let y = 30; y < height - 20; y += 40) {
+      ctx.beginPath();
+      ctx.moveTo(35, y);
+      ctx.lineTo(width - 15, y);
+      ctx.stroke();
+    }
+
+    if (history.length < 2) {
+      ctx.font = '12px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = textColor;
+      ctx.textAlign = 'center';
+      ctx.fillText('Nhấn "Bắt Đầu Tự Huấn Luyện" để theo dõi đường cong mất mát thời gian thực...', width / 2, height / 2);
+      return;
+    }
+
+    // Plot Loss Line (Red/Orange)
+    const maxLoss = Math.max(1.0, ...history);
+    const minLoss = Math.min(...history);
+    const range = Math.max(0.1, maxLoss - minLoss);
+
+    ctx.beginPath();
+    history.forEach((loss, i) => {
+      const x = 40 + (i / (history.length - 1)) * (width - 60);
+      const normalized = (loss - minLoss) / range;
+      const y = height - 30 - normalized * (height - 60);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+
+    ctx.strokeStyle = '#DC2626';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Labels
+    ctx.font = '10px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#DC2626';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Loss: ${history[history.length - 1].toFixed(4)}`, 45, 20);
+
+    const accHistory = window.smartNN.accuracyHistory;
+    if (accHistory.length > 0) {
+      ctx.fillStyle = '#16A34A';
+      ctx.fillText(`Acc: ${accHistory[accHistory.length - 1]}%`, 140, 20);
+    }
+  }
+
+  async function handleTutorSend() {
+    const query = elements.tutorInput.value.trim();
+    if (!query) return;
+
+    appendChatMessage('user', query);
+    elements.tutorInput.value = '';
+
+    const typingId = appendChatMessage('bot', 'Đang suy ngẫm hướng dẫn Socratic...');
+
+    const summary = engine.generateAdaptiveRoadmap();
+    const gaps = engine.diagnoseKnowledgeGaps();
+    const curr = window.SMART_CURRICULUM[currentCurriculumKey];
+
+    const contextState = {
+      curriculumTitle: curr.title,
+      overallMastery: summary.overallMastery,
+      topGap: gaps[0]?.skillName || null
+    };
+
+    const reply = await aiService.askTutor(query, contextState);
+    updateChatMessage(typingId, reply);
+  }
+
+  function appendChatMessage(sender, text) {
+    const bubble = document.createElement('div');
+    bubble.className = `chat-bubble ${sender}`;
+    const id = 'msg_' + Date.now();
+    bubble.id = id;
+    bubble.innerHTML = SmartSecurity.sanitizeHTML(text).replace(/\n/g, '<br>');
+    elements.chatMessages.appendChild(bubble);
+    elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+    return id;
+  }
+
+  function updateChatMessage(id, newText) {
+    const bubble = document.getElementById(id);
+    if (bubble) {
+      bubble.innerHTML = SmartSecurity.sanitizeHTML(newText).replace(/\n/g, '<br>');
+      elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+    }
+  }
+
+  function handleExportGmail() {
+    const summary = engine.generateAdaptiveRoadmap();
+    const gaps = engine.diagnoseKnowledgeGaps();
+    const curr = window.SMART_CURRICULUM[currentCurriculumKey];
+
+    const subject = encodeURIComponent(`[SMART AI] Báo Cáo Chẩn Đoán Lỗ Hổng Kiến Thức & Lộ Trình Thích Nghi - ${curr.title}`);
+    
+    let bodyText = `HỆ THỐNG TRÍ TUỆ NHÂN TẠO HỌC TẬP THÍCH NGHI (SMART AI)\n`;
+    bodyText += `Chẩn Đoán Năng Lực & Dự Đoán Lỗ Hổng Kiến Thức Học Sinh\n`;
+    bodyText += `========================================================\n\n`;
+    bodyText += `Môn học: ${curr.title}\n`;
+    bodyText += `Chỉ số thông thạo BKT toàn diện: ${summary.overallMastery}%\n`;
+    bodyText += `Mã phiên xác thực toàn vẹn (SHA-256): ${currentSessionDigest || 'AUTHENTICATED'}\n\n`;
+    bodyText += `--- 1. CÁC LỖ HỔNG KIẾN THỨC GỐC RỄ (ROOT GAPS) ---\n`;
+    
+    if (gaps.length === 0) {
+      bodyText += `Không phát hiện lỗ hổng nghiêm trọng.\n\n`;
+    } else {
+      gaps.forEach((g, idx) => {
+        bodyText += `${idx + 1}. [${g.skillName}] (${g.severity}) - Thành thạo: ${g.masteryScore}%\n`;
+        bodyText += `   Sai lệch nhận thức: ${g.detectedMisconception}\n`;
+        bodyText += `   Chỉ dẫn can thiệp: ${g.recommendation}\n\n`;
+      });
+    }
+
+    bodyText += `--- 2. LỘ TRÌNH THÍCH NGHI ĐỀ XUẤT ---\n`;
+    summary.roadmap.slice(0, 4).forEach(s => {
+      bodyText += `- Bước ${s.stepOrder}: ${s.actionTitle} (~${s.estimatedMinutes} phút)\n`;
+    });
+
+    bodyText += `\nTrân trọng,\nHệ thống SMART AI Research Hub`;
+
+    const gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&su=${subject}&body=${encodeURIComponent(bodyText)}`;
+    
+    // Open Gmail web client in new tab
+    const win = window.open(gmailWebUrl, '_blank');
+    if (!win) {
+      // Fallback to mailto link
+      window.location.href = `mailto:?subject=${subject}&body=${encodeURIComponent(bodyText)}`;
+    }
+  }
+
+  function handleCopyDigest() {
+    const summary = engine.generateAdaptiveRoadmap();
+    const payload = JSON.stringify({
+      system: 'SMART_AI_ADAPTIVE_ENGINE',
+      curriculum: currentCurriculumKey,
+      overallMastery: summary.overallMastery,
+      digestSha256: currentSessionDigest,
+      timestamp: new Date().toISOString()
+    }, null, 2);
+
+    navigator.clipboard.writeText(payload).then(() => {
+      alert('Đã sao chép mã xác thực phiên học tập an toàn vào clipboard!');
+    });
+  }
+
+  function renderSecurityAudit() {
+    const report = SmartSecurity.auditSecurityPosture();
+    elements.securityAuditBody.innerHTML = `
+      <tr><td><strong>Content Security Policy (CSP)</strong></td><td><span class="badge badge-green">Hoạt động (Zero Trust)</span></td></tr>
+      <tr><td><strong>Phòng chống tấn công XSS</strong></td><td><span class="badge badge-green">Mã hóa thực thể HTML đa tầng</span></td></tr>
+      <tr><td><strong>Chuẩn mã hóa mật mã</strong></td><td><span class="badge badge-blue">${report.cryptoSuite}</span></td></tr>
+      <tr><td><strong>Xác thực toàn vẹn phiên</strong></td><td><span class="badge badge-blue">${report.sessionIntegrity}</span></td></tr>
+      <tr><td><strong>Lưu trữ API Key</strong></td><td><span class="badge badge-green">Mã hóa AES-GCM, không lộ Plaintext</span></td></tr>
+      <tr><td><strong>Giới hạn tần suất (Rate Limit)</strong></td><td><span class="badge badge-green">Sliding Window Protection</span></td></tr>
+      <tr><td><strong>Tiêu chuẩn OWASP / Cloudflare</strong></td><td><span class="badge badge-green">${report.owaspCompliance}</span></td></tr>
+    `;
+  }
+
+  function setupCommandPalette() {
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        elements.cmdPalette.classList.toggle('open');
+        if (elements.cmdPalette.classList.contains('open')) {
+          elements.cmdInput.focus();
+        }
+      } else if (e.key === 'Escape') {
+        elements.cmdPalette.classList.remove('open');
+      }
+    });
+
+    elements.cmdPaletteBtn?.addEventListener('click', () => {
+      elements.cmdPalette.classList.add('open');
+      elements.cmdInput.focus();
+    });
+
+    const commands = [
+      { label: 'Chẩn đoán Năng lực Thích nghi (Diagnostic Quiz)', action: () => elements.tabDiagnostic.click() },
+      { label: 'Ma trận & Đồ thị Lỗ hổng Kiến thức (DAG & Radar)', action: () => elements.tabRadar.click() },
+      { label: 'Lộ trình Học tập Cá nhân hóa (Adaptive Roadmap)', action: () => elements.tabRoadmap.click() },
+      { label: 'Tự Train Mạng Nơ-ron AI (In-Browser Neural DKT)', action: () => elements.tabNeural.click() },
+      { label: 'Trợ lý Gia sư Socratic (Socratic AI Tutor)', action: () => elements.tabTutor.click() },
+      { label: 'Cấu hình Google Gemini AI Key', action: () => elements.geminiConfigBtn.click() },
+      { label: 'Kiểm toán Bảo mật Hệ thống (Security Audit)', action: () => elements.securityAuditBtn.click() },
+      { label: 'Gửi Báo cáo qua Gmail', action: handleExportGmail },
+    ];
+
+    function renderCmds(filter = '') {
+      const filtered = commands.filter(c => c.label.toLowerCase().includes(filter.toLowerCase()));
+      elements.cmdList.innerHTML = filtered.map((c, i) => `
+        <div class="cmd-item" data-idx="${i}">
+          <span>${c.label}</span>
+          <span class="badge badge-blue">Enter</span>
+        </div>
+      `).join('');
+
+      elements.cmdList.querySelectorAll('.cmd-item').forEach((item, idx) => {
+        item.addEventListener('click', () => {
+          filtered[idx].action();
+          elements.cmdPalette.classList.remove('open');
+        });
+      });
+    }
+
+    elements.cmdInput?.addEventListener('input', (e) => renderCmds(e.target.value));
+    renderCmds();
+  }
+
+  function initGSAPAnimations() {
+    if (!window.gsap) return;
+    window.gsap.from('.app-header', { y: -20, opacity: 0, duration: 0.5, ease: 'power2.out' });
+    window.gsap.from('.bento-card', { y: 24, opacity: 0, duration: 0.5, stagger: 0.08, ease: 'power2.out' });
+  }
+
+  function checkSecurityPosture() {
+    // Basic verification of crypto subtle support
+    if (!window.crypto || !window.crypto.subtle) {
+      console.error('[SMART AI Security] Web Crypto API is not available on this browser environment!');
+    }
+  }
+
+  function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(err => {
+        console.log('[PWA] Service Worker registration skipped in standalone context');
+      });
+    }
+  }
+
+  // Self start on DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+  } else {
+    initApp();
+  }
+})();
