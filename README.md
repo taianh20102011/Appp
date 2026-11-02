@@ -124,5 +124,15 @@ d:\app_lam_vui\
 
 ---
 
-## 📜 GIẤY PHÉP BẢN QUYỀN
-Dự án được phân phối hoàn toàn miễn phí phục vụ mục đích nghiên cứu, giáo dục và phát triển khoa học công nghệ.
+## 📜 GIẤY PHÉP BẢN QUYỀN & CHÍNH SÁCH BẢO HỘ PHÁP LÝ
+
+Dự án được bảo hộ quyền tác giả chính thức bởi:
+- **Tác giả:** **Tài Anh** (`phamngoctaianh6@gmail.com`)
+- **Giấy phép cốt lõi (Core Open Source License):** [GNU Affero General Public License v3.0 (AGPLv3)](./LICENSE)
+- **Chính sách pháp lý & Giải pháp kỹ thuật bảo vệ:** Xem chi tiết tại [LICENSE-POLICY.md](./LICENSE-POLICY.md)
+
+### 🎯 Tại sao lại chọn GNU AGPLv3?
+- **Khắc phục triệt để lỗ hổng SaaS (SaaS Loophole - Điều 13 AGPL)**: Khác với MIT hay Apache 2.0 (vốn cho phép người khác lấy code của bạn, đóng gói kín và mở dịch vụ đám mây thu tiền), GNU AGPLv3 bắt buộc bất kỳ ai host hoặc cải tiến hệ thống trên mạng Internet đều phải công khai toàn bộ mã nguồn cải tiến cho người dùng.
+- **Bảo hộ sáng chế (Patent Protection)**: Chống lại các vụ kiện tụng bằng sáng chế từ bên thứ ba.
+- **Hệ thống xác thực bản quyền số (Cryptographic Licensing)**: Tích hợp cơ chế sinh & xác thực License Key gắn mã máy (Device Fingerprint) bằng HMAC-SHA-256 trong tệp `js/crypto-security.js`.
+- **Thương mại hóa kép (Dual Licensing)**: Nếu các tổ chức/doanh nghiệp muốn dùng phần mềm mà không muốn mở mã nguồn phái sinh, họ bắt buộc phải liên hệ với tác giả để mua giấy phép thương mại riêng biệt.

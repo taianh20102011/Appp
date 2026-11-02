@@ -81,6 +81,15 @@
     elements.closeSecurityModal = document.getElementById('closeSecurityModal');
     elements.securityAuditBody = document.getElementById('securityAuditBody');
 
+    elements.licenseBtn = document.getElementById('licenseBtn');
+    elements.licenseModal = document.getElementById('licenseModal');
+    elements.closeLicenseModal = document.getElementById('closeLicenseModal');
+    elements.licenseKeyInput = document.getElementById('licenseKeyInput');
+    elements.verifyLicenseBtn = document.getElementById('verifyLicenseBtn');
+    elements.licenseVerifyMsg = document.getElementById('licenseVerifyMsg');
+    elements.deviceFingerprintText = document.getElementById('deviceFingerprintText');
+    elements.genSampleLicenseBtn = document.getElementById('genSampleLicenseBtn');
+
     elements.geminiModal = document.getElementById('geminiModal');
     elements.closeGeminiModal = document.getElementById('closeGeminiModal');
     elements.geminiKeyInput = document.getElementById('geminiKeyInput');
@@ -241,6 +250,37 @@
     });
     elements.closeSecurityModal?.addEventListener('click', () => {
       elements.securityModal.classList.remove('open');
+    });
+
+    // License Modal & Cryptographic Validator
+    elements.licenseBtn?.addEventListener('click', async () => {
+      if (elements.deviceFingerprintText) {
+        elements.deviceFingerprintText.textContent = await SmartSecurity.getDeviceFingerprint();
+      }
+      if (!elements.licenseKeyInput.value) {
+        elements.licenseKeyInput.value = await SmartSecurity.generateLicenseKey('ACADEMIC_PRO', 365);
+      }
+      elements.licenseModal.classList.add('open');
+    });
+    elements.closeLicenseModal?.addEventListener('click', () => {
+      elements.licenseModal.classList.remove('open');
+    });
+
+    elements.verifyLicenseBtn?.addEventListener('click', async () => {
+      const key = elements.licenseKeyInput.value.trim();
+      const res = await SmartSecurity.verifyLicenseKey(key);
+      if (res.valid) {
+        elements.licenseVerifyMsg.innerHTML = `✅ Bản quyền hợp lệ: Gói <strong>${res.edition}</strong> | Hạn dùng: <strong>${res.expiryDate}</strong> | Tác giả: <strong>${res.author}</strong>`;
+        elements.licenseVerifyMsg.style.color = 'var(--status-success)';
+      } else {
+        elements.licenseVerifyMsg.innerHTML = `❌ ${res.reason}`;
+        elements.licenseVerifyMsg.style.color = 'var(--status-danger)';
+      }
+    });
+
+    elements.genSampleLicenseBtn?.addEventListener('click', async () => {
+      elements.licenseKeyInput.value = await SmartSecurity.generateLicenseKey('ENTERPRISE_PRO', 730);
+      elements.verifyLicenseBtn.click();
     });
 
     // Gemini Settings Modal
@@ -879,6 +919,7 @@
       { label: 'Trợ lý Gia sư Socratic (Socratic AI Tutor)', action: () => elements.tabTutor.click() },
       { label: 'Cấu hình Google Gemini AI Key', action: () => elements.geminiConfigBtn.click() },
       { label: 'Kiểm toán Bảo mật Hệ thống (Security Audit)', action: () => elements.securityAuditBtn.click() },
+      { label: 'Xem Bản Quyền & Giấy Phép (GNU AGPLv3 License)', action: () => elements.licenseBtn.click() },
       { label: 'Gửi Báo cáo qua Gmail', action: handleExportGmail },
     ];
 

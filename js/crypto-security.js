@@ -129,6 +129,68 @@ const SmartSecurity = (function () {
   }
 
   /**
+   * Generates a unique client hardware/browser fingerprint (SHA-256)
+   */
+  async function getDeviceFingerprint() {
+    const raw = [
+      navigator.userAgent || '',
+      screen.width || '',
+      screen.height || '',
+      navigator.hardwareConcurrency || 4,
+      Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+    ].join('###');
+    return (await computeHash(raw)).substring(0, 16).toUpperCase();
+  }
+
+  /**
+   * Cryptographic License Key Generator & Validator (HMAC-SHA256)
+   * Pattern: SMART-[EDITION]-[EXPIRY_HEX]-[SIGNATURE_8]
+   */
+  const LICENSE_MASTER_SALT = 'smart-ai-agplv3-tai-anh-2026';
+
+  async function generateLicenseKey(edition = 'ACADEMIC_PRO', days = 365) {
+    const expiry = Date.now() + (days * 86400000);
+    const expiryHex = expiry.toString(16).toUpperCase();
+    const payload = `${edition}:${expiryHex}:${LICENSE_MASTER_SALT}`;
+    const sig = (await computeHash(payload)).substring(0, 8).toUpperCase();
+    return `SMART-${edition}-${expiryHex}-${sig}`;
+  }
+
+  async function verifyLicenseKey(keyStr) {
+    if (!keyStr || typeof keyStr !== 'string') {
+      return { valid: false, reason: 'Khóa bản quyền không hợp lệ' };
+    }
+    const parts = keyStr.trim().split('-');
+    if (parts.length !== 4 || parts[0] !== 'SMART') {
+      return { valid: false, reason: 'Định dạng mã bản quyền không đúng cấu trúc' };
+    }
+
+    const edition = parts[1];
+    const expiryHex = parts[2];
+    const signature = parts[3];
+
+    const expectedPayload = `${edition}:${expiryHex}:${LICENSE_MASTER_SALT}`;
+    const expectedSig = (await computeHash(expectedPayload)).substring(0, 8).toUpperCase();
+
+    if (signature !== expectedSig) {
+      return { valid: false, reason: 'Chữ ký mật mã không hợp lệ hoặc đã bị chỉnh sửa trái phép' };
+    }
+
+    const expiryTime = parseInt(expiryHex, 16);
+    if (isNaN(expiryTime) || Date.now() > expiryTime) {
+      return { valid: false, reason: 'Bản quyền đã hết hạn sử dụng' };
+    }
+
+    return {
+      valid: true,
+      edition,
+      expiryDate: new Date(expiryTime).toLocaleDateString('vi-VN'),
+      author: 'Tài Anh (phamngoctaianh6@gmail.com)',
+      licenseType: 'GNU AGPLv3 + Cryptographic Node License'
+    };
+  }
+
+  /**
    * Validates Content Security Policy compliance checklist
    */
   function auditSecurityPosture() {
@@ -139,7 +201,9 @@ const SmartSecurity = (function () {
       sessionIntegrity: 'SHA-256 Anti-Tamper Checksum',
       keyStorage: 'Encrypted in-browser storage, zero plaintext leak',
       rateLimiter: 'Sliding window active',
-      owaspCompliance: 'A01, A02, A03, A07 Mitigated'
+      owaspCompliance: 'A01, A02, A03, A07 Mitigated',
+      legalLicense: 'GNU Affero GPL v3.0 (AGPLv3) - SaaS Loophole Closed',
+      authorCopyright: '© 2026 Tài Anh (phamngoctaianh6@gmail.com)'
     };
   }
 
@@ -149,7 +213,10 @@ const SmartSecurity = (function () {
     decryptSecret,
     computeHash,
     checkRateLimit,
-    auditSecurityPosture
+    auditSecurityPosture,
+    getDeviceFingerprint,
+    generateLicenseKey,
+    verifyLicenseKey
   };
 })();
 

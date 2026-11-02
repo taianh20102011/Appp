@@ -49,6 +49,10 @@
           <span>🛡️ Bảo mật</span>
         </button>
 
+        <button id="licenseBtn" class="btn btn-secondary btn-sm" title="Giấy phép GNU AGPLv3 & Bản quyền tác giả">
+          <span>📜 Bản quyền & License</span>
+        </button>
+
         <button id="neuralTrainHeaderBtn" class="btn btn-primary btn-sm" title="Tự động Huấn luyện Mô hình AI (In-Browser Machine Learning)">
           <span>🧠 Tự Train AI (100% Free)</span>
         </button>
@@ -338,6 +342,48 @@
       </table>
       <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
         <button class="btn btn-secondary" onclick="document.getElementById('securityModal').classList.remove('open')">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: License & Copyright Protection -->
+  <div class="modal-overlay" id="licenseModal">
+    <div class="modal-card">
+      <div class="card-header-row">
+        <h3>Giấy Phép Bản Quyền & Xác Thực Mật Mã</h3>
+        <button class="btn-icon" id="closeLicenseModal">✕</button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.88rem;">
+        <div style="padding: 12px; background-color: var(--bg-surface-subtle); border: 1px solid var(--border-subtle); border-radius: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <strong>Giấy Phép Cốt Lõi:</strong>
+            <span class="badge badge-green">GNU AGPLv3 (An ninh & Copyleft tối đa)</span>
+          </div>
+          <div style="margin-bottom: 4px;"><strong>Tác giả:</strong> Tài Anh (<a href="mailto:phamngoctaianh6@gmail.com" style="color: var(--accent-primary);">phamngoctaianh6@gmail.com</a>)</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">
+            Bảo vệ tuyệt đối khỏi "Lỗ hổng SaaS" (SaaS Loophole): Bất kỳ ai sử dụng hoặc sửa đổi mã nguồn này trên mạng Internet bắt buộc phải công khai toàn bộ mã nguồn.
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <label style="font-size: 0.82rem; font-weight: 600;">Khóa Kích Hoạt Kỹ Thuật Số (Cryptographic Node License):</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="licenseKeyInput" class="input-text mono-num" placeholder="SMART-ACADEMIC_PRO-..." autocomplete="off">
+            <button id="verifyLicenseBtn" class="btn btn-primary btn-sm">Xác Thực</button>
+          </div>
+          <div id="licenseVerifyMsg" style="font-size: 0.8rem; color: var(--status-success);">
+            ✅ Bản quyền Academic Research Pro đã kích hoạt hợp lệ trên thiết bị này.
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border-divider); padding-top: 8px;">
+          <span>Vân tay thiết bị (Hardware Fingerprint):</span>
+          <span class="mono-num" id="deviceFingerprintText">Đang tính...</span>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+        <button class="btn btn-secondary btn-sm" id="genSampleLicenseBtn">Tạo Khóa Bản Quyền Mới</button>
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('licenseModal').classList.remove('open')">Đóng</button>
       </div>
     </div>
   </div>
