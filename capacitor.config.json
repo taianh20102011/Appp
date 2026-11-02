@@ -1,8 +1,7 @@
 {
   "appId": "com.taianh.smartai",
   "appName": "SMART AI",
-  "webDir": ".",
-  "bundledWebRuntime": false,
+  "webDir": "www",
   "server": {
     "androidScheme": "https"
   },

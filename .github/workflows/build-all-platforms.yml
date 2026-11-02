@@ -1,4 +1,4 @@
-name: Auto-Build Multi-Platform Apps (Windows, macOS, Android, Web)
+name: Auto-Build Multi-Platform Apps (Windows, macOS, Android)
 
 on:
   push:
@@ -21,13 +21,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install --include=dev
+        run: npm install
 
-      - name: Compile Windows Installer & Portable EXE
+      - name: Compile Windows App (.exe)
         run: npx electron-builder --win --x64
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4
@@ -35,7 +36,7 @@ jobs:
           name: SMART-AI-Windows-App
           path: dist/*.exe
 
-  # 2. BUILD MACOS DESKTOP APP (.DMG / .APP)
+  # 2. BUILD MACOS DESKTOP APP (.DMG / .ZIP)
   build-macos:
     name: Build macOS App (.dmg, .zip)
     runs-on: macos-latest
@@ -47,13 +48,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install --include=dev
+        run: npm install
 
       - name: Compile macOS DMG & ZIP
         run: npx electron-builder --mac
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload macOS Artifacts
         uses: actions/upload-artifact@v4
@@ -85,17 +88,16 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install dependencies & Capacitor
+      - name: Install dependencies & sync Capacitor assets
         run: |
-          npm install --include=dev
-          npx @capacitor/cli add android || true
-          npx @capacitor/cli copy android
+          npm install
+          npx cap sync android
 
       - name: Build Android Debug APK with Gradle
         working-directory: android
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload Android APK Artifact
         uses: actions/upload-artifact@v4
@@ -116,12 +118,12 @@ jobs:
       - name: Create Release and Upload Binaries
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0-${{ github.run_number }}
+          tag_name: v1.0.0-build-${{ github.run_number }}
           name: SMART AI Release v1.0.0 (Windows, macOS, Android)
           body: |
             ## 🚀 SMART AI – Bộ cài đặt đa nền tảng tự động biên dịch
             Tự động sinh bởi CI/CD GitHub Actions:
-            - **Windows**: Tải file `.exe` (Installer hoặc Portable chạy ngay)
+            - **Windows**: Tải file `.exe` (Bản Portable chạy ngay)
             - **macOS**: Tải file `.dmg` hoặc `.zip` cho máy Mac Intel / Apple Silicon
             - **Android**: Tải file `.apk` cài trực tiếp lên điện thoại hoặc máy tính bảng Android
             - **Web**: Chạy trực tiếp qua trình duyệt với PWA Offline Mode
