@@ -1,0 +1,72 @@
+{
+  "name": "smart-ai",
+  "version": "1.0.0",
+  "description": "SMART AI – Development of an Adaptive Artificial Intelligence System for Personalized Learning and Student Knowledge Gap Prediction.",
+  "main": "electron-main.js",
+  "scripts": {
+    "start": "electron .",
+    "web": "start index.html",
+    "serve": "npx -y serve -p 8080 .",
+    "build:win": "electron-builder --win --x64",
+    "build:win:portable": "electron-builder --win portable --x64",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux AppImage",
+    "build:android:init": "npx @capacitor/cli init \"SMART AI\" com.taianh.smartai --web-dir .",
+    "build:android:add": "npx @capacitor/cli add android",
+    "build:android": "npx @capacitor/cli copy android && npx @capacitor/cli open android"
+  },
+  "keywords": [
+    "adaptive-learning",
+    "artificial-intelligence",
+    "deep-knowledge-tracing",
+    "bayesian-knowledge-tracing",
+    "in-browser-machine-learning"
+  ],
+  "author": "Tài Anh <phamngoctaianh6@gmail.com>",
+  "license": "AGPL-3.0-only",
+  "build": {
+    "appId": "com.taianh.smartai",
+    "productName": "SMART AI",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "icons/icon-512.png"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "icons/icon-512.png",
+      "category": "public.app-category.education"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "icons/icon-512.png",
+      "category": "Education"
+    },
+    "files": [
+      "index.html",
+      "manifest.json",
+      "css/**/*",
+      "js/**/*",
+      "icons/**/*",
+      "electron-main.js",
+      "preload.js"
+    ]
+  },
+  "devDependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  }
+}

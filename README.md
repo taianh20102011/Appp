@@ -96,17 +96,41 @@ d:\app_lam_vui\
 
 ---
 
-## 💻 HƯỚNG DẪN SỬ DỤNG
+## 💻 HƯỚNG DẪN CHẠY WEB & TỰ ĐỘNG BUILD APP ĐA NỀN TẢNG
 
-### Bước 1: Khởi Chạy Ứng Dụng
-- Cách 1: Bấm chuột phải vào file `index.html` chọn **Open with** -> Google Chrome / Microsoft Edge.
-- Cách 2: Nếu có máy chủ cục bộ (Live Server / Python), gõ:
-  ```powershell
-  python -m http.server 8080
+### 1. Cách Chạy Bản Web (3 Cách Cực Dễ)
+- **Cách 1 (Nhanh nhất - 1 chạm):** Click đúp vào file `start-web.bat` hoặc click đúp trực tiếp vào [index.html](file:///d:/app_lam_vui/index.html). Trình duyệt sẽ mở ứng dụng ngay lập tức với đầy đủ tính năng!
+- **Cách 2 (Máy chủ cục bộ Local Server):** Click đúp vào file `start-server.bat`. Hệ thống sẽ tự động khởi động server tại `http://localhost:8080`.
+- **Cách 3 (Lệnh Command Line):**
+  ```bash
+  npm run serve
+  # Hoặc python -m http.server 8080
   ```
-  Sau đó mở `http://localhost:8080`.
 
-### Bước 2: Làm Bài Chẩn Đoán Năng Lực (Diagnostic Quiz)
+---
+
+### 📱 2. Tự Động Build App Cho Windows, macOS và Android
+
+Hệ thống đã được trang bị **2 cơ chế tự động biên dịch App** vô cùng mạnh mẽ:
+
+#### Cơ chế 1: Tự động 100% bằng GitHub Actions Cloud (Khuyên dùng - Không cần cài nặng máy)
+- Mỗi khi code được push lên GitHub `https://github.com/taianh20102011/Appp.git`, hệ thống GitHub Actions CI/CD (`.github/workflows/build-all-platforms.yml`) sẽ **tự động khởi chạy máy ảo đám mây**:
+  - Máy ảo **Windows**: Tự build ra file **`SMART-AI-Setup.exe`** và **`SMART-AI-Portable.exe`**.
+  - Máy ảo **macOS**: Tự build ra file **`SMART-AI.dmg`** và **`SMART-AI-mac.zip`**.
+  - Máy ảo **Ubuntu + Android SDK**: Tự build ra file **`SMART-AI.apk`** cho điện thoại Android.
+- Bạn chỉ cần vào mục **[Releases](https://github.com/taianh20102011/Appp/releases)** trên trang GitHub của bạn và bấm **Tải về (Download)** file cài đặt tương ứng!
+
+#### Cơ chế 2: Tự Build Cục Bộ Ngay Trên Máy Tính Bằng 1-Click
+- **Build Windows App (.exe):**
+  - Click đúp vào file `build-windows-app.bat`. File `.exe` cài đặt và bản Portable sẽ tự động được sinh ra trong thư mục `dist/`.
+- **Build macOS App (.dmg):**
+  - Chạy file: `./build-mac-app.sh` (hoặc lệnh `npm run build:mac`).
+- **Build Android App (.apk):**
+  - Click đúp vào file `build-android-app.bat` (hoặc lệnh `npm run build:android`).
+
+---
+
+### 3. Hướng Dẫn Sử Dụng Các Tính Năng Cốt Lõi
 - Chọn môn học mong muốn (Toán học cho AI, Khoa học Máy tính & Lập trình...).
 - Lựa chọn các phương án trả lời. Hệ thống BKT sẽ tính toán theo thời gian thực và hiển thị phản hồi ngay lập tức về sai lệch nhận thức nếu làm sai.
 
