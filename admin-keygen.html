@@ -76,77 +76,98 @@
       </div>
     </div>
 
-    <div class="form-group">
-      <label>Master Salt Bí Mật Của Tác Giả:</label>
-      <input type="password" id="masterSalt" class="input-text mono-num" value="smart-ai-agplv3-tai-anh-2026">
-    </div>
-
-    <button id="btnGenerateKey" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
-      🔑 TẠO KHÓA BẢN QUYỀN ĐỘC QUYỀN
+    <button id="btnGenerateKey" class="btn btn-primary" style="width: 100%; margin-top: 14px;">
+      🔑 KÝ SỐ & TẠO KHÓA BẢN QUYỀN ECDSA P-256
     </button>
 
     <div id="outputSection" style="display: none; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border-divider);">
       <label style="font-size: 0.85rem; font-weight: 700; color: var(--status-success);">
-        ✅ Khóa Bản Quyền Đã Được Ký Số (HMAC-SHA256):
+        ✅ Khóa Bản Quyền Ký Số Mật Mã Bất Đối Xứng (ECDSA P-256):
       </label>
       <div style="display: flex; gap: 8px; margin-top: 6px;">
-        <input type="text" id="generatedKeyOutput" class="input-text mono-num" readonly style="font-weight: 700; background: var(--bg-surface-subtle); color: var(--accent-primary);">
+        <input type="text" id="generatedKeyOutput" class="input-text mono-num" readonly style="font-weight: 700; background: var(--bg-surface-subtle); color: var(--accent-primary); font-size: 0.8rem;">
         <button id="btnCopyKey" class="btn btn-secondary btn-sm" style="white-space: nowrap;">📋 Copy Key</button>
       </div>
 
-      <div id="keySummaryText" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 8px; line-height: 1.4;"></div>
+      <div id="keySummaryText" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 8px; line-height: 1.5;"></div>
     </div>
   </div>
 
   <script>
-    async function computeHash(message) {
-      const msgUint8 = new TextEncoder().encode(message);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    // KHÓA BÍ MẬT PRIVATE KEY CỦA TÁC GIẢ TÀI ANH (TUYỆT ĐỐI CHỈ NẰM Ở ĐÂY, KHÔNG ĐƯA VÀO APP)
+    const TAI_ANH_PRIVATE_KEY_JWK = {
+      key_ops: ["sign"],
+      ext: true,
+      kty: "EC",
+      x: "NdJC43bEwvk8TU97IXgt17NBIZfqQQ77lx3lV3VH2ec",
+      y: "RtOit13gUuV_acyChDHh2JtE5OojCosOnzwvtE3tXrM",
+      crv: "P-256",
+      d: "vM9ftId9FdeJ2gH8hSJ7xlsgJBx1B6E_GMeQhYnCIiA"
+    };
+
+    function uint8ArrayToBase64Url(uint8) {
+      let binary = '';
+      for (let i = 0; i < uint8.byteLength; i++) {
+        binary += String.fromCharCode(uint8[i]);
+      }
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     }
 
     document.getElementById('btnGenerateKey').addEventListener('click', async () => {
       const edition = document.getElementById('editionSelect').value;
       const days = parseInt(document.getElementById('durationSelect').value, 10);
-      const salt = document.getElementById('masterSalt').value.trim();
       const rawDevice = document.getElementById('targetDeviceId').value.trim();
 
       const expiry = Date.now() + (days * 86400000);
       const expiryHex = expiry.toString(16).toUpperCase();
+      const devPart = rawDevice ? rawDevice.substring(0, 8).toUpperCase() : 'UNIVERSAL';
 
-      let keyStr = '';
-      let summary = '';
+      // Tạo chữ ký số bất đối xứng ECDSA P-256
+      try {
+        const privKey = await crypto.subtle.importKey(
+          'jwk',
+          TAI_ANH_PRIVATE_KEY_JWK,
+          { name: 'ECDSA', namedCurve: 'P-256' },
+          false,
+          ['sign']
+        );
 
-      if (rawDevice) {
-        // Device-bound key: SMART-[EDITION]-[DEV_ID]-[EXPIRY]-[SIG]
-        const devPart = rawDevice.substring(0, 8).toUpperCase();
-        const payload = `${edition}:${devPart}:${expiryHex}:${salt}`;
-        const sig = (await computeHash(payload)).substring(0, 8).toUpperCase();
-        keyStr = `SMART-${edition}-${devPart}-${expiryHex}-${sig}`;
-        summary = `Khóa được <strong>khóa cứng theo thiết bị mã [${devPart}]</strong>. Chỉ máy của khách hàng mới kích hoạt được, nếu họ gửi key này cho người khác máy khác sẽ bị từ chối!`;
-      } else {
-        // Universal key: SMART-[EDITION]-[EXPIRY]-[SIG]
-        const payload = `${edition}:${expiryHex}:${salt}`;
-        const sig = (await computeHash(payload)).substring(0, 8).toUpperCase();
-        keyStr = `SMART-${edition}-${expiryHex}-${sig}`;
-        summary = `Khóa dùng chung (Universal). Có thể kích hoạt trên mọi thiết bị đến ngày hết hạn.`;
+        const payload = `${edition}:${devPart}:${expiryHex}:TAI_ANH_SMART_AI`;
+        const data = new TextEncoder().encode(payload);
+
+        const sigBuffer = await crypto.subtle.sign(
+          { name: 'ECDSA', hash: { name: 'SHA-256' } },
+          privKey,
+          data
+        );
+
+        const sigB64Url = uint8ArrayToBase64Url(new Uint8Array(sigBuffer));
+        const keyStr = `SMART-${edition}-${devPart}-${expiryHex}-${sigB64Url}`;
+
+        const outSec = document.getElementById('outputSection');
+        outSec.style.display = 'block';
+        document.getElementById('generatedKeyOutput').value = keyStr;
+
+        const boundDesc = devPart !== 'UNIVERSAL' 
+          ? `Khóa được <strong>khóa cứng theo mã máy [${devPart}]</strong>. Nếu học sinh gửi key này cho bạn bè dùng trên máy khác sẽ bị từ chối ngay lập tức!` 
+          : `Khóa dùng chung (Universal) cho tất cả thiết bị.`;
+
+        document.getElementById('keySummaryText').innerHTML = `
+          • <strong>Thuật toán:</strong> Mật mã bất đối xứng NIST ECDSA Curve P-256 + SHA-256.<br>
+          • <strong>Hạn dùng:</strong> ${new Date(expiry).toLocaleDateString('vi-VN')} (${days} ngày).<br>
+          • <strong>Ràng buộc thiết bị:</strong> ${boundDesc}<br>
+          • <strong>Bảo mật:</strong> Người dùng dù mở F12 xem toàn bộ code Public Key của app cũng KHÔNG THỂ hack hoặc tự tạo key mới được!
+        `;
+      } catch (err) {
+        alert('Lỗi tạo khóa ECDSA: ' + err.message);
       }
-
-      const outSec = document.getElementById('outputSection');
-      outSec.style.display = 'block';
-      document.getElementById('generatedKeyOutput').value = keyStr;
-      document.getElementById('keySummaryText').innerHTML = `
-        • <strong>Hạn dùng:</strong> ${new Date(expiry).toLocaleDateString('vi-VN')} (${days} ngày)<br>
-        • <strong>Cơ chế:</strong> ${summary}
-      `;
     });
 
     document.getElementById('btnCopyKey').addEventListener('click', () => {
       const input = document.getElementById('generatedKeyOutput');
       input.select();
       navigator.clipboard.writeText(input.value).then(() => {
-        alert('Đã sao chép Khóa Bản Quyền! Bạn có thể gửi mã này cho khách hàng.');
+        alert('Đã sao chép Khóa Bản Quyền ECDSA P-256! Bạn có thể gửi mã này cho khách hàng.');
       });
     });
   </script>

@@ -143,11 +143,28 @@ const SmartSecurity = (function () {
   }
 
   /**
-   * Cryptographic License Key Validator (HMAC-SHA256 with Device Fingerprint Binding)
-   * Pattern A (Device-Bound): SMART-[EDITION]-[DEV_ID_8]-[EXPIRY_HEX]-[SIGNATURE_8]
-   * Pattern B (Universal):    SMART-[EDITION]-[EXPIRY_HEX]-[SIGNATURE_8]
+   * MẬT MÃ BẤT ĐỐI XỨNG ECDSA P-256 (NIST FIPS 186-4 Curve P-256 + SHA-256)
+   * Trong ứng dụng Client CHỈ CHỨA PUBLIC KEY (Khóa công khai).
+   * Kẻ xấu dù mở DevTools F12 xem trọn vẹn Public Key cũng KHÔNG THỂ NÀO
+   * suy ngược ra Private Key của Tài Anh để tạo key giả!
    */
-  const LICENSE_MASTER_SALT = 'smart-ai-agplv3-tai-anh-2026';
+  const TAI_ANH_PUBLIC_KEY_JWK = {
+    kty: "EC",
+    crv: "P-256",
+    x: "NdJC43bEwvk8TU97IXgt17NBIZfqQQ77lx3lV3VH2ec",
+    y: "RtOit13gUuV_acyChDHh2JtE5OojCosOnzwvtE3tXrM"
+  };
+
+  function base64UrlToUint8Array(b64url) {
+    let b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+  }
 
   async function verifyLicenseKey(keyStr) {
     if (!keyStr || typeof keyStr !== 'string') {
@@ -160,59 +177,66 @@ const SmartSecurity = (function () {
 
     const currentDeviceId = (await getDeviceFingerprint()).substring(0, 8).toUpperCase();
 
-    let edition = '';
-    let expiryHex = '';
-    let signature = '';
-    let devPart = '';
+    let edition = parts[1];
+    let devPart = parts.length === 5 ? parts[2].toUpperCase() : 'UNIVERSAL';
+    let expiryHex = parts.length === 5 ? parts[3] : parts[2];
+    let signatureB64Url = parts.length === 5 ? parts[4] : parts[3];
 
-    if (parts.length === 5) {
-      // Device-Bound format: SMART-[EDITION]-[DEV_ID]-[EXPIRY]-[SIG]
-      edition = parts[1];
-      devPart = parts[2].toUpperCase();
-      expiryHex = parts[3];
-      signature = parts[4];
+    // 1. Kiểm tra khóa theo thiết bị (Hardware Fingerprint Binding)
+    if (devPart !== 'UNIVERSAL' && devPart !== currentDeviceId) {
+      return {
+        valid: false,
+        reason: `Khóa này chỉ cấp quyền cho thiết bị mã [${devPart}], không khớp với thiết bị hiện tại [${currentDeviceId}]!`
+      };
+    }
 
-      // Verify that this key was issued for this specific machine
-      if (devPart !== 'UNIVERSAL' && devPart !== currentDeviceId) {
+    // 2. Kiểm tra thời hạn bản quyền
+    const expiryTime = parseInt(expiryHex, 16);
+    if (isNaN(expiryTime) || Date.now() > expiryTime) {
+      return { valid: false, reason: 'Bản quyền này đã hết hạn sử dụng!' };
+    }
+
+    // 3. Xác thực Chữ ký số bất đối xứng ECDSA P-256 của Tác giả Tài Anh
+    try {
+      const pubCryptoKey = await crypto.subtle.importKey(
+        'jwk',
+        TAI_ANH_PUBLIC_KEY_JWK,
+        { name: 'ECDSA', namedCurve: 'P-256' },
+        false,
+        ['verify']
+      );
+
+      const payload = `${edition}:${devPart}:${expiryHex}:TAI_ANH_SMART_AI`;
+      const data = new TextEncoder().encode(payload);
+      const sigBytes = base64UrlToUint8Array(signatureB64Url);
+
+      const isValid = await crypto.subtle.verify(
+        { name: 'ECDSA', hash: { name: 'SHA-256' } },
+        pubCryptoKey,
+        sigBytes,
+        data
+      );
+
+      if (!isValid) {
         return {
           valid: false,
-          reason: `Khóa này chỉ cấp quyền cho thiết bị mã [${devPart}], không khớp với thiết bị hiện tại [${currentDeviceId}]!`
+          reason: 'Chữ ký số ECDSA không hợp lệ! Khóa này không được ký bởi Private Key của tác giả Tài Anh.'
         };
       }
 
-      const expectedPayload = `${edition}:${devPart}:${expiryHex}:${LICENSE_MASTER_SALT}`;
-      const expectedSig = (await computeHash(expectedPayload)).substring(0, 8).toUpperCase();
-
-      if (signature !== expectedSig) {
-        return { valid: false, reason: 'Chữ ký mật mã không hợp lệ hoặc đã bị chỉnh sửa trái phép' };
-      }
-    } else {
-      // Universal format: SMART-[EDITION]-[EXPIRY]-[SIG]
-      edition = parts[1];
-      expiryHex = parts[2];
-      signature = parts[3];
-
-      const expectedPayload = `${edition}:${expiryHex}:${LICENSE_MASTER_SALT}`;
-      const expectedSig = (await computeHash(expectedPayload)).substring(0, 8).toUpperCase();
-
-      if (signature !== expectedSig) {
-        return { valid: false, reason: 'Chữ ký mật mã không hợp lệ hoặc đã bị chỉnh sửa trái phép' };
-      }
+      return {
+        valid: true,
+        edition,
+        deviceBound: devPart === 'UNIVERSAL' ? 'Tất cả thiết bị (Universal)' : `Khóa theo máy [${devPart}]`,
+        expiryDate: new Date(expiryTime).toLocaleDateString('vi-VN'),
+        cryptoAlgorithm: 'ECDSA P-256 (NIST Curve) + SHA-256',
+        author: 'Tài Anh (phamngoctaianh6@gmail.com)',
+        licenseType: 'GNU AGPLv3 + Asymmetric Hardware-Bound License'
+      };
+    } catch (err) {
+      console.error('[ECDSA Verify Error]', err);
+      return { valid: false, reason: 'Lỗi giải mã chữ ký mật mã: ' + err.message };
     }
-
-    const expiryTime = parseInt(expiryHex, 16);
-    if (isNaN(expiryTime) || Date.now() > expiryTime) {
-      return { valid: false, reason: 'Bản quyền đã hết hạn sử dụng' };
-    }
-
-    return {
-      valid: true,
-      edition,
-      deviceBound: devPart ? (devPart === 'UNIVERSAL' ? 'Tất cả thiết bị' : `Khóa theo máy [${devPart}]`) : 'Chung',
-      expiryDate: new Date(expiryTime).toLocaleDateString('vi-VN'),
-      author: 'Tài Anh (phamngoctaianh6@gmail.com)',
-      licenseType: 'GNU AGPLv3 + Cryptographic Node License'
-    };
   }
 
   /**
@@ -222,7 +246,7 @@ const SmartSecurity = (function () {
     return {
       cspActive: true,
       xssSanitization: 'Enabled (Zero Trust Entity Encoding)',
-      cryptoSuite: 'Web Crypto API AES-GCM-256 + PBKDF2 (100k rounds)',
+      cryptoSuite: 'Web Crypto API ECDSA P-256 + AES-GCM-256 + PBKDF2 (100k rounds)',
       sessionIntegrity: 'SHA-256 Anti-Tamper Checksum',
       keyStorage: 'Encrypted in-browser storage, zero plaintext leak',
       rateLimiter: 'Sliding window active',
