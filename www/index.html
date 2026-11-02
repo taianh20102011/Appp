@@ -42,6 +42,9 @@
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
 
+  <!-- Tesseract.js for In-Browser Client-Side Free OCR -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
   <!-- GSAP 3.15 Animation Engine -->
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.15/dist/gsap.min.js"></script>
 </head>
@@ -351,6 +354,98 @@
           </div>
         </div>
 
+        <!-- Bottom: Exam Paper Multi-Capture & Optical Character Recognition (OCR) Training Module -->
+        <div class="bento-card col-12" id="examOCRCard" style="margin-top: 16px;">
+          <div class="card-header-row">
+            <div class="card-title-group">
+              <h3>📸 Chụp & Tải Nhiều Ảnh Đề Thi Để Huấn Luyện AI (Exam Multi-Capture OCR)</h3>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">
+                Chụp ảnh đề thi bằng Camera điện thoại/webcam hoặc chọn nhiều ảnh đề thi cùng lúc. Hệ thống sẽ bóc tách câu hỏi và dùng kết quả làm bài của học sinh để tự huấn luyện trọng số mạng Nơ-ron DKT & BKT!
+              </p>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <span class="badge badge-blue">Multi-Image OCR</span>
+              <span class="badge badge-green">Tesseract.js Client-Side</span>
+              <span class="badge badge-amber">Gemini 2.5 Vision</span>
+            </div>
+          </div>
+
+          <!-- Hidden File Inputs -->
+          <input type="file" id="examCameraInput" accept="image/*" capture="environment" style="display: none;">
+          <input type="file" id="examMultiFilesInput" accept="image/*" multiple style="display: none;">
+
+          <!-- Action Control Toolbar -->
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;">
+            <button id="btnTriggerCamera" class="btn btn-primary btn-sm">
+              📷 Chụp Ảnh Bằng Camera
+            </button>
+            <button id="btnTriggerMultiFiles" class="btn btn-secondary btn-sm">
+              📁 Chọn Nhiều Ảnh Đề Thi (Multi-Select)
+            </button>
+            <button id="btnClearExamImages" class="btn btn-secondary btn-sm" style="display: none;">
+              🗑️ Xóa Tất Cả Ảnh
+            </button>
+            <button id="btnStartOCRProcess" class="btn btn-primary btn-sm" style="display: none; background: #059669; border-color: #059669;">
+              ⚡ Bắt Đầu Quét OCR & Trích Xuất Đề Thi
+            </button>
+          </div>
+
+          <!-- Interactive Drag-and-Drop Zone -->
+          <div id="examDropzone" class="exam-dropzone">
+            <div style="font-size: 2rem; margin-bottom: 6px;">📄📸</div>
+            <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 4px;">Kéo & Thả Nhiều Ảnh Đề Thi Vào Đây</div>
+            <div style="font-size: 0.82rem; color: var(--text-secondary);">
+              Hoặc bấm nút <strong>Chụp Ảnh</strong> / <strong>Chọn Nhiều Ảnh</strong> ở trên (Hỗ trợ JPG, PNG, WEBP)
+            </div>
+          </div>
+
+          <!-- Uploaded Images Preview Grid -->
+          <div id="examImagesPreviewGrid" class="exam-preview-grid"></div>
+
+          <!-- Processing Progress Telemetry -->
+          <div id="ocrProgressTelemetry" style="display: none; margin-top: 14px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 600;">
+              <span id="ocrStatusText">Đang phân tích và bóc tách câu hỏi...</span>
+              <span id="ocrPercentText" class="mono-num">0%</span>
+            </div>
+            <div class="ocr-progress-bar-container">
+              <div id="ocrProgressFill" class="ocr-progress-fill"></div>
+            </div>
+          </div>
+
+          <!-- Extracted Exam Question Solver & Neural Training Panel -->
+          <div id="scannedExamTrainingPanel" style="display: none; margin-top: 18px; border-top: 1px solid var(--border-divider); padding-top: 16px;">
+            <div class="card-header-row" style="margin-bottom: 12px;">
+              <div>
+                <h4 style="font-size: 1rem; font-weight: 700;">📝 Làm Đề Thi Đã Quét & Tự Huấn Luyện Mạng Nơ-ron</h4>
+                <p style="font-size: 0.82rem; color: var(--text-secondary);">
+                  Mỗi đáp án bạn chọn sẽ ngay lập tức được nạp vào thuật toán Backpropagation và cập nhật xác suất năng lực P(L).
+                </p>
+              </div>
+              <span id="scannedExamCounterBadge" class="badge badge-blue">Câu 1 / 1</span>
+            </div>
+
+            <!-- Scanned Quiz Card -->
+            <div class="exam-scanned-quiz-card">
+              <div id="scannedQuestionText" style="font-size: 1rem; font-weight: 600; margin-bottom: 14px; line-height: 1.5;"></div>
+              
+              <div id="scannedOptionsContainer" style="display: flex; flex-direction: column; gap: 8px;"></div>
+
+              <div id="scannedFeedbackBox" style="display: none; margin-top: 12px; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem;"></div>
+
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; flex-wrap: wrap; gap: 10px;">
+                <button id="btnAutoTrainAllScanned" class="btn btn-secondary btn-sm">
+                  ⚡ Tự Động Huấn Luyện Mạng Nơ-ron Toàn Diện Từ Bộ Đề Này
+                </button>
+                <button id="btnNextScannedQuestion" class="btn btn-primary btn-sm" style="display: none;">
+                  Câu Tiếp Theo →
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
       </div>
     </section>
 
@@ -456,6 +551,7 @@
   <script src="./js/react-bits.js"></script>
   <script src="./js/knowledge-engine.js"></script>
   <script src="./js/neural-engine.js"></script>
+  <script src="./js/ocr-exam-service.js"></script>
   <script src="./js/ai-service.js"></script>
   <script src="./js/ui-controller.js"></script>
 </body>

@@ -38,6 +38,12 @@
     if (window.SmartCaptcha) {
       window.SmartCaptcha.renderWidget('captchaWidgetContainer');
     }
+
+    // Exam Paper OCR & Multi-Capture Module
+    initExamOCRModule();
+
+    // KaTeX Math Rendering
+    renderAllMath();
   }
 
   function cacheElements() {
@@ -116,6 +122,27 @@
     elements.exportGmailBtn = document.getElementById('exportGmailBtn');
     elements.copyDigestBtn = document.getElementById('copyDigestBtn');
     elements.rateLimitBadge = document.getElementById('rateLimitBadge');
+
+    // Exam Paper Multi-Capture OCR & Training Elements
+    elements.examCameraInput = document.getElementById('examCameraInput');
+    elements.examMultiFilesInput = document.getElementById('examMultiFilesInput');
+    elements.btnTriggerCamera = document.getElementById('btnTriggerCamera');
+    elements.btnTriggerMultiFiles = document.getElementById('btnTriggerMultiFiles');
+    elements.btnClearExamImages = document.getElementById('btnClearExamImages');
+    elements.btnStartOCRProcess = document.getElementById('btnStartOCRProcess');
+    elements.examDropzone = document.getElementById('examDropzone');
+    elements.examImagesPreviewGrid = document.getElementById('examImagesPreviewGrid');
+    elements.ocrProgressTelemetry = document.getElementById('ocrProgressTelemetry');
+    elements.ocrStatusText = document.getElementById('ocrStatusText');
+    elements.ocrPercentText = document.getElementById('ocrPercentText');
+    elements.ocrProgressFill = document.getElementById('ocrProgressFill');
+    elements.scannedExamTrainingPanel = document.getElementById('scannedExamTrainingPanel');
+    elements.scannedExamCounterBadge = document.getElementById('scannedExamCounterBadge');
+    elements.scannedQuestionText = document.getElementById('scannedQuestionText');
+    elements.scannedOptionsContainer = document.getElementById('scannedOptionsContainer');
+    elements.scannedFeedbackBox = document.getElementById('scannedFeedbackBox');
+    elements.btnNextScannedQuestion = document.getElementById('btnNextScannedQuestion');
+    elements.btnAutoTrainAllScanned = document.getElementById('btnAutoTrainAllScanned');
   }
 
   function initServices() {
@@ -261,6 +288,7 @@
           }
         }
         activeTab = tab.id;
+        setTimeout(() => renderAllMath(tab.section), 60);
         if (tab.id === 'radar') {
           setTimeout(() => { drawRadarChart(); drawDAGGraph(); }, 50);
         } else if (tab.id === 'roadmap') {
@@ -1049,6 +1077,318 @@
 
     elements.cmdInput?.addEventListener('input', (e) => renderCmds(e.target.value));
     renderCmds();
+  }
+
+  // KaTeX Universal Math Renderer
+  function renderAllMath(rootElement = document.body) {
+    if (window.renderMathInElement && rootElement) {
+      try {
+        window.renderMathInElement(rootElement, {
+          delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false },
+            { left: '\\(', right: '\\)', display: false },
+            { left: '\\[', right: '\\]', display: true }
+          ],
+          throwOnError: false
+        });
+      } catch (err) {
+        console.warn('KaTeX render warning:', err);
+      }
+    }
+  }
+
+  // Exam Paper Multi-Capture OCR & Real-time Neural Network Training Module
+  function initExamOCRModule() {
+    if (!window.SmartExamOCR) return;
+
+    // Trigger Camera
+    elements.btnTriggerCamera?.addEventListener('click', () => {
+      elements.examCameraInput?.click();
+    });
+
+    // Trigger Multi-files
+    elements.btnTriggerMultiFiles?.addEventListener('click', () => {
+      elements.examMultiFilesInput?.click();
+    });
+
+    // Handle Camera file change
+    elements.examCameraInput?.addEventListener('change', async (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        await handleExamFilesAdded(e.target.files);
+        e.target.value = '';
+      }
+    });
+
+    // Handle Multi-files change
+    elements.examMultiFilesInput?.addEventListener('change', async (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        await handleExamFilesAdded(e.target.files);
+        e.target.value = '';
+      }
+    });
+
+    // Drag and drop zone
+    if (elements.examDropzone) {
+      elements.examDropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        elements.examDropzone.classList.add('dragover');
+      });
+      elements.examDropzone.addEventListener('dragleave', () => {
+        elements.examDropzone.classList.remove('dragover');
+      });
+      elements.examDropzone.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        elements.examDropzone.classList.remove('dragover');
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          await handleExamFilesAdded(e.dataTransfer.files);
+        }
+      });
+      elements.examDropzone.addEventListener('click', () => {
+        elements.examMultiFilesInput?.click();
+      });
+    }
+
+    // Clear all images
+    elements.btnClearExamImages?.addEventListener('click', () => {
+      window.SmartExamOCR.clearAllImages();
+      renderExamImagesGrid();
+      if (elements.scannedExamTrainingPanel) elements.scannedExamTrainingPanel.style.display = 'none';
+      if (elements.ocrProgressTelemetry) elements.ocrProgressTelemetry.style.display = 'none';
+      showToast('Đã xóa tất cả ảnh đề thi.', 'info');
+    });
+
+    // Start OCR Processing
+    elements.btnStartOCRProcess?.addEventListener('click', async () => {
+      if (!checkActionRateLimit('ocr_exam', 5, 30000)) return;
+      if (window.SmartExamOCR.uploadedImages.length === 0) {
+        showToast('Vui lòng chọn hoặc chụp ít nhất 1 ảnh đề thi!', 'warning');
+        return;
+      }
+
+      elements.ocrProgressTelemetry.style.display = 'block';
+      elements.btnStartOCRProcess.disabled = true;
+      elements.btnStartOCRProcess.textContent = '⏳ Đang Quét...';
+
+      try {
+        const questions = await window.SmartExamOCR.processAllImages({
+          onProgress: (p) => {
+            elements.ocrPercentText.textContent = `${p.percent}%`;
+            elements.ocrProgressFill.style.width = `${p.percent}%`;
+            elements.ocrStatusText.textContent = p.message;
+          }
+        });
+
+        renderExamImagesGrid();
+        showToast(`Đã nhận diện thành công ${questions.length} câu hỏi từ ảnh đề thi!`, 'success');
+        startScannedExamSession();
+      } catch (err) {
+        showToast('Lỗi khi quét ảnh đề thi: ' + err.message, 'danger');
+      } finally {
+        elements.btnStartOCRProcess.disabled = false;
+        elements.btnStartOCRProcess.textContent = '⚡ Bắt Đầu Quét OCR & Trích Xuất Đề Thi';
+      }
+    });
+
+    // Next scanned question
+    elements.btnNextScannedQuestion?.addEventListener('click', () => {
+      const q = window.SmartExamOCR.nextQuestion();
+      if (q) {
+        renderScannedQuestion(q);
+      } else {
+        const results = window.SmartExamOCR.finishSession();
+        renderScannedExamSummary(results);
+      }
+    });
+
+    // Auto train all scanned
+    elements.btnAutoTrainAllScanned?.addEventListener('click', async () => {
+      await autoTrainAllScannedExamQuestions();
+    });
+  }
+
+  async function handleExamFilesAdded(files) {
+    const added = await window.SmartExamOCR.addImages(files);
+    renderExamImagesGrid();
+    showToast(`Đã nạp ${added.length} ảnh đề thi. Nhấn 'Bắt Đầu Quét' để trích xuất câu hỏi.`, 'success');
+  }
+
+  function renderExamImagesGrid() {
+    if (!elements.examImagesPreviewGrid) return;
+    const images = window.SmartExamOCR.uploadedImages;
+
+    if (images.length === 0) {
+      elements.examImagesPreviewGrid.innerHTML = '';
+      if (elements.btnClearExamImages) elements.btnClearExamImages.style.display = 'none';
+      if (elements.btnStartOCRProcess) elements.btnStartOCRProcess.style.display = 'none';
+      return;
+    }
+
+    if (elements.btnClearExamImages) elements.btnClearExamImages.style.display = 'inline-flex';
+    if (elements.btnStartOCRProcess) elements.btnStartOCRProcess.style.display = 'inline-flex';
+
+    elements.examImagesPreviewGrid.innerHTML = images.map((img) => `
+      <div class="exam-preview-card" data-id="${img.id}">
+        <button class="exam-preview-remove" onclick="window.removeExamImage('${img.id}')" title="Xóa ảnh này">✕</button>
+        <img src="${img.dataUrl}" alt="${img.name}" loading="lazy">
+        <div class="exam-preview-info">
+          <span style="font-weight: 600; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${img.name}</span>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: var(--text-secondary);">${img.size}</span>
+            <span class="badge ${img.status === 'done' ? 'badge-green' : (img.status === 'processing' ? 'badge-blue' : 'badge-amber')}" style="padding: 1px 4px; font-size: 0.65rem;">
+              ${img.status === 'done' ? `${img.questions?.length || 0} câu` : (img.status === 'processing' ? 'Đang quét' : 'Chờ')}
+            </span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  window.removeExamImage = function(id) {
+    window.SmartExamOCR.removeImage(id);
+    renderExamImagesGrid();
+  };
+
+  function startScannedExamSession() {
+    const q = window.SmartExamOCR.startExamSession();
+    if (!q) return;
+    if (elements.scannedExamTrainingPanel) elements.scannedExamTrainingPanel.style.display = 'block';
+    renderScannedQuestion(q);
+    if (window.gsap) {
+      window.gsap.fromTo(elements.scannedExamTrainingPanel, { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 0.35 });
+    }
+  }
+
+  function renderScannedQuestion(q) {
+    if (!q) return;
+    const total = window.SmartExamOCR.extractedQuestions.length;
+    elements.scannedExamCounterBadge.textContent = `Câu ${q.displayNumber} / ${total}`;
+    
+    // Header & question text with image source pill
+    elements.scannedQuestionText.innerHTML = `
+      <div style="margin-bottom: 6px;">
+        <span class="badge badge-blue">Từ ảnh: ${q.sourceImageName || 'Đề thi'}</span>
+        <span class="badge badge-amber" style="margin-left: 6px;">Kỹ năng: ${q.skillName || 'Toán học'}</span>
+      </div>
+      <div><strong>Câu ${q.displayNumber}:</strong> ${SmartSecurity.sanitizeHTML(q.questionText)}</div>
+    `;
+
+    // Options
+    elements.scannedOptionsContainer.innerHTML = q.options.map(opt => `
+      <button class="quiz-option-btn" data-key="${opt.key}" style="display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px 14px;">
+        <span class="option-key" style="font-weight: 800; width: 24px; height: 24px; border-radius: 4px; background: var(--bg-surface-subtle); display: inline-flex; align-items: center; justify-content: center;">${opt.key}</span>
+        <span>${SmartSecurity.sanitizeHTML(opt.text)}</span>
+      </button>
+    `).join('');
+
+    elements.scannedFeedbackBox.style.display = 'none';
+    elements.btnNextScannedQuestion.style.display = 'none';
+
+    // Bind option click
+    const optionBtns = elements.scannedOptionsContainer.querySelectorAll('.quiz-option-btn');
+    optionBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const selectedKey = btn.getAttribute('data-key');
+        handleScannedAnswerSubmit(selectedKey, optionBtns);
+      });
+    });
+
+    renderAllMath(elements.scannedExamTrainingPanel);
+  }
+
+  function handleScannedAnswerSubmit(selectedKey, optionBtns) {
+    optionBtns.forEach(b => b.disabled = true);
+    const result = window.SmartExamOCR.submitAnswer(selectedKey);
+    if (!result) return;
+
+    optionBtns.forEach(b => {
+      const key = b.getAttribute('data-key');
+      if (key === result.correctKey) {
+        b.classList.add('correct');
+      } else if (key === selectedKey && !result.isCorrect) {
+        b.classList.add('incorrect');
+      }
+    });
+
+    elements.scannedFeedbackBox.style.display = 'block';
+    if (result.isCorrect) {
+      elements.scannedFeedbackBox.className = 'quiz-feedback correct';
+      elements.scannedFeedbackBox.innerHTML = `
+        <strong>Chính xác!</strong> Mô hình BKT cập nhật xác suất năng lực P(L): <strong>${Math.round(result.bktUpdate?.pL * 100 || 80)}%</strong>.<br>
+        Mạng Nơ-ron DKT đã thực hiện 5 epoch lan truyền ngược (Backpropagation) để cập nhật trọng số W₁, W₂, W₃!
+      `;
+    } else {
+      elements.scannedFeedbackBox.className = 'quiz-feedback incorrect';
+      elements.scannedFeedbackBox.innerHTML = `
+        <strong>Chưa chính xác!</strong> Đáp án đúng là <strong>${result.correctKey}</strong>.<br>
+        Xác suất năng lực P(L) điều chỉnh về: <strong>${Math.round(result.bktUpdate?.pL * 100 || 30)}%</strong>. Mạng Nơ-ron đã ghi nhận lỗ hổng nhận thức và điều chỉnh trọng số lỗi.
+      `;
+    }
+
+    // Update telemetry HUD
+    if (window.smartNN) {
+      elements.neuralEpochBadge.textContent = `Epoch: ${window.smartNN.currentEpoch} / 60`;
+      const lastLoss = window.smartNN.lossHistory[window.smartNN.lossHistory.length - 1];
+      const lastAcc = window.smartNN.accuracyHistory[window.smartNN.accuracyHistory.length - 1];
+      if (lastLoss !== undefined) {
+        elements.neuralLossMetric.textContent = `Loss: ${lastLoss.toFixed(4)} | Acc: ${lastAcc || 0}%`;
+        drawLossCurve();
+      }
+    }
+
+    elements.btnNextScannedQuestion.style.display = 'inline-flex';
+    renderAllMath(elements.scannedFeedbackBox);
+  }
+
+  function renderScannedExamSummary(results) {
+    elements.scannedQuestionText.innerHTML = `
+      <div style="text-align: center; padding: 20px 0;">
+        <div style="font-size: 2.5rem; margin-bottom: 8px;">🎉</div>
+        <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--accent-primary);">HOÀN THÀNH BÀI THI TỪ ẢNH SCAN</h3>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 6px;">
+          Đạt: <strong>${results.correctCount}/${results.total} câu (${results.scorePercent}%)</strong>
+        </p>
+      </div>
+    `;
+    elements.scannedOptionsContainer.innerHTML = '';
+    elements.scannedFeedbackBox.style.display = 'block';
+    elements.scannedFeedbackBox.className = 'quiz-feedback correct';
+    elements.scannedFeedbackBox.innerHTML = `
+      Hệ thống đã đồng bộ toàn bộ kết quả bài thi từ ảnh vào Đồ thị Tri thức DAG và Mạng Nơ-ron DKT.<br>
+      Bạn có thể chuyển sang tab <strong>Đồ thị & Ma trận</strong> để xem ma trận năng lực mới, hoặc tab <strong>Lộ trình thích nghi</strong> để xem lộ trình học tập cá nhân hóa được cập nhật!
+    `;
+    elements.btnNextScannedQuestion.style.display = 'none';
+  }
+
+  async function autoTrainAllScannedExamQuestions() {
+    if (!window.smartNN || window.SmartExamOCR.extractedQuestions.length === 0) {
+      showToast('Chưa có câu hỏi nào từ ảnh đề thi để huấn luyện!', 'warning');
+      return;
+    }
+    showToast('Bắt đầu tự động huấn luyện Mạng Nơ-ron từ toàn bộ câu hỏi trong ảnh đề thi...', 'info');
+    elements.trainingStatusBadge.textContent = 'Auto-train đề thi...';
+    elements.trainingStatusBadge.className = 'badge badge-blue';
+
+    const questions = window.SmartExamOCR.extractedQuestions;
+    for (let q of questions) {
+      if (engine) {
+        engine.updateMastery(q.skillId || 'node-1', true);
+      }
+    }
+
+    // Train 40 epochs on student interaction profile
+    const studentVector = engine ? engine.getStudentVector() : Array(12).fill(0.6);
+    await window.smartNN.trainEpochs(studentVector, 40, 0.015);
+
+    elements.neuralEpochBadge.textContent = `Epoch: ${window.smartNN.currentEpoch} / 60`;
+    const lastLoss = window.smartNN.lossHistory[window.smartNN.lossHistory.length - 1];
+    const lastAcc = window.smartNN.accuracyHistory[window.smartNN.accuracyHistory.length - 1];
+    elements.neuralLossMetric.textContent = `Loss: ${lastLoss.toFixed(4)} | Acc: ${lastAcc}%`;
+    drawLossCurve();
+
+    elements.trainingStatusBadge.textContent = 'Đã khớp đề thi';
+    elements.trainingStatusBadge.className = 'badge badge-green';
+    showToast('Đã hoàn tất tự động huấn luyện Mạng Nơ-ron từ toàn bộ ảnh đề thi!', 'success');
   }
 
   function initGSAPAnimations() {
