@@ -115,6 +115,7 @@
     // Share / Gmail Export
     elements.exportGmailBtn = document.getElementById('exportGmailBtn');
     elements.copyDigestBtn = document.getElementById('copyDigestBtn');
+    elements.rateLimitBadge = document.getElementById('rateLimitBadge');
   }
 
   function initServices() {
@@ -123,17 +124,104 @@
     window.smartNN.loadWeights();
   }
 
+  // Active Rate Limiter Controller & Visual HUD
+  function checkActionRateLimit(actionName, maxRequests = 10, windowMs = 60000) {
+    const res = SmartSecurity.checkRateLimit(actionName, maxRequests, windowMs);
+    updateRateLimitHUD(res, maxRequests);
+    if (!res.allowed) {
+      showToast(`⚠️ Bạn đang thao tác quá nhanh! Vui lòng chờ ${res.retryAfter}s để tiếp tục.`, 'warning');
+      return false;
+    }
+    return true;
+  }
+
+  function updateRateLimitHUD(status, maxRequests = 10) {
+    if (!elements.rateLimitBadge) return;
+    if (status.allowed) {
+      const remaining = status.remaining !== undefined ? status.remaining : maxRequests;
+      elements.rateLimitBadge.textContent = `⚡ Rate Limit: ${remaining}/${maxRequests} OK`;
+      elements.rateLimitBadge.className = remaining <= 2 ? 'badge badge-amber' : 'badge badge-green';
+    } else {
+      elements.rateLimitBadge.textContent = `⏳ Cooldown: ${status.retryAfter}s`;
+      elements.rateLimitBadge.className = 'badge badge-red';
+    }
+  }
+
+  function showToast(message, type = 'info') {
+    let toast = document.getElementById('smartToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'smartToast';
+      toast.style.position = 'fixed';
+      toast.style.top = '24px';
+      toast.style.right = '24px';
+      toast.style.zIndex = '9999';
+      toast.style.padding = '12px 20px';
+      toast.style.borderRadius = '6px';
+      toast.style.fontWeight = '600';
+      toast.style.fontSize = '0.88rem';
+      toast.style.boxShadow = '0 10px 30px rgba(0,0,0,0.18)';
+      toast.style.transition = 'all 0.25s ease';
+      document.body.appendChild(toast);
+    }
+
+    if (type === 'warning') {
+      toast.style.backgroundColor = '#FEF3C7';
+      toast.style.color = '#92400E';
+      toast.style.border = '1px solid #F59E0B';
+    } else if (type === 'danger') {
+      toast.style.backgroundColor = '#FEE2E2';
+      toast.style.color = '#991B1B';
+      toast.style.border = '1px solid #EF4444';
+    } else {
+      toast.style.backgroundColor = '#DCFCE7';
+      toast.style.color = '#166534';
+      toast.style.border = '1px solid #22C55E';
+    }
+
+    toast.textContent = message;
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0)';
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(-10px)';
+    }, 2800);
+  }
+
+  // Non-Blocking Asynchronous Micro-Task Data Loader (Zero Lag, 60fps Guaranteed)
   function loadCurriculum(key) {
     currentCurriculumKey = key;
     const curr = window.SMART_CURRICULUM[key];
     if (!curr) return;
 
-    engine = new SmartKnowledgeEngine(curr);
-    currentQuizIndex = 0;
-    renderQuizQuestion();
-    updateDashboardMetrics();
-    drawRadarChart();
-    drawDAGGraph();
+    // Phase 1: Instant visual feedback with Shimmer Skeleton (Zero Stutter)
+    if (elements.quizContainer) {
+      elements.quizContainer.innerHTML = `
+        <div class="shimmer-active" style="height: 52px; border-radius: 6px; margin-bottom: 12px;"></div>
+        <div class="shimmer-active" style="height: 40px; border-radius: 6px; margin-bottom: 8px;"></div>
+        <div class="shimmer-active" style="height: 40px; border-radius: 6px; margin-bottom: 8px;"></div>
+        <div class="shimmer-active" style="height: 40px; border-radius: 6px;"></div>
+      `;
+    }
+
+    // Phase 2: Yield to frame 1 - Initialize Knowledge Engine
+    requestAnimationFrame(() => {
+      engine = new SmartKnowledgeEngine(curr);
+      currentQuizIndex = 0;
+      renderQuizQuestion();
+
+      // Phase 3: Yield to frame 2 - Update Metrics & Gaps
+      requestAnimationFrame(() => {
+        updateDashboardMetrics();
+
+        // Phase 4: Yield to frame 3 - Render Visual Canvases smoothly
+        requestAnimationFrame(() => {
+          drawRadarChart();
+          drawDAGGraph();
+        });
+      });
+    });
   }
 
   function bindEvents() {
@@ -190,6 +278,7 @@
     // Neural Network Self-Training Controls
     elements.startTrainBtn?.addEventListener('click', async () => {
       if (!window.smartNN) return;
+      if (!checkActionRateLimit('train_model', 3, 20000)) return;
       elements.startTrainBtn.style.display = 'none';
       elements.stopTrainBtn.style.display = 'inline-flex';
       elements.trainingStatusBadge.textContent = 'Đang huấn luyện...';
@@ -374,7 +463,7 @@
       </div>
       <div id="quizFeedbackBox" style="display:none; padding: 12px; border-radius: 6px; font-size: 0.9rem;"></div>
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 8px;">
-        <span style="font-size: 0.75rem; color: var(--text-muted);">Mô hình BKT: $L_0=${node.bktDefaults.L0}, T=${node.bktDefaults.T}, S=${node.bktDefaults.S}, G=${node.bktDefaults.G}$</span>
+        <span style="font-size: 0.75rem; color: var(--text-muted);">Mô hình BKT: L₀ = ${node.bktDefaults.L0} • T = ${node.bktDefaults.T} • S = ${node.bktDefaults.S} • G = ${node.bktDefaults.G}</span>
         <button id="nextQuestionBtn" class="btn btn-secondary btn-sm" style="display:none;">
           Nút tiếp theo →
         </button>
@@ -390,6 +479,7 @@
     const optionBtns = elements.quizContainer.querySelectorAll('.quiz-option-btn');
     optionBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
+        if (!checkActionRateLimit('quiz_answer', 8, 10000)) return;
         const chosenIdx = parseInt(btn.getAttribute('data-idx'), 10);
         handleOptionAnswer(node, chosenIdx, optionBtns);
       });
@@ -428,12 +518,12 @@
       if (isCorrect) {
         feedbackBox.style.backgroundColor = '#DCFCE7';
         feedbackBox.style.color = '#14532D';
-        feedbackBox.innerHTML = `<strong>Chính xác!</strong> Đã cập nhật $P(L) = ${Math.round(result.pL * 100)}\\%$. Kỹ năng "${node.name}" tăng trưởng vượt bậc!`;
+        feedbackBox.innerHTML = `<strong>Chính xác!</strong> Độ thành thạo P(L) cập nhật: <strong>${Math.round(result.pL * 100)}%</strong>. Kỹ năng "${node.name}" tăng trưởng vượt bậc!`;
       } else {
         feedbackBox.style.backgroundColor = '#FEE2E2';
         feedbackBox.style.color = '#7F1D1D';
         feedbackBox.innerHTML = `
-          <strong>Phát hiện lỗ hổng kiến thức!</strong> $P(L)$ điều chỉnh về: <strong>${Math.round(result.pL * 100)}%</strong>.<br>
+          <strong>Phát hiện lỗ hổng kiến thức!</strong> Độ thành thạo P(L) điều chỉnh về: <strong>${Math.round(result.pL * 100)}%</strong>.<br>
           <em>Gợi ý chấn chỉnh:</em> ${SmartSecurity.sanitizeHTML(result.misconception || q.hint)}
         `;
       }

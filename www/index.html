@@ -74,6 +74,10 @@
           <span>🛡️ Bảo mật</span>
         </button>
 
+        <span id="rateLimitBadge" class="badge badge-green" title="Hệ thống giám sát tần suất yêu cầu (Anti-Spam Rate Limiter)">
+          ⚡ Rate Limit: 10/10 OK
+        </span>
+
         <button id="licenseBtn" class="btn btn-secondary btn-sm" title="Giấy phép GNU AGPLv3 & Bản quyền tác giả">
           <span>📜 Bản quyền & License</span>
         </button>
@@ -182,7 +186,7 @@
             </div>
             <span class="badge badge-blue">Độ phủ kỹ năng</span>
           </div>
-          <p style="font-size: 0.85rem;">Biểu diễn xác suất thành thạo $P(L)$ của từng nút kiến thức sau khi áp dụng mô hình BKT.</p>
+          <p style="font-size: 0.85rem;">Biểu diễn xác suất thành thạo <span class="mono-num font-semibold text-blue-600">P(L)</span> của từng nút kiến thức sau khi áp dụng mô hình BKT.</p>
           <div class="canvas-holder">
             <canvas id="radarCanvas"></canvas>
           </div>
@@ -282,7 +286,7 @@
           <!-- Training Loss & Accuracy Live Canvas -->
           <div style="background-color: var(--bg-surface-subtle); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-size: 0.8rem; font-weight: 600;">Đường Cong Mất Mát (Loss Curve $L(w)$) & Độ Chính Xác</span>
+              <span style="font-size: 0.8rem; font-weight: 600;">Đường Cong Mất Mát (Loss Curve <span class="mono-num font-semibold">L(w)</span>) & Độ Chính Xác</span>
               <span class="mono-num" id="neuralLossMetric" style="font-size: 0.8rem; color: var(--accent-primary);">Loss: 0.0000 | Acc: 0%</span>
             </div>
             <canvas id="lossCanvas" style="width: 100%; height: 220px; display: block;"></canvas>
@@ -311,7 +315,7 @@
 
           <div style="display: flex; flex-direction: column; gap: 12px;">
             <p style="font-size: 0.85rem; color: var(--text-secondary);">
-              Nhấn bắt đầu để kích hoạt quá trình tự lan truyền ngược (Backpropagation) và cập nhật ma trận trọng số $W_1, W_2, W_3$ trong thời gian thực.
+              Nhấn bắt đầu để kích hoạt quá trình tự lan truyền ngược (Backpropagation) và cập nhật ma trận trọng số <span class="mono-num font-semibold">W₁, W₂, W₃</span> trong thời gian thực.
             </p>
 
             <button id="startTrainBtn" class="btn btn-primary" style="width: 100%;">
@@ -332,7 +336,7 @@
 
             <div style="border-top: 1px solid var(--border-divider); padding-top: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem;">
               <div style="display: flex; justify-content: space-between;">
-                <span>Tốc độ học ($\alpha$):</span>
+                <span>Tốc độ học (α - Alpha):</span>
                 <span class="mono-num">0.015 (Adam)</span>
               </div>
               <div style="display: flex; justify-content: space-between;">

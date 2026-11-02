@@ -1,6 +1,6 @@
 /**
  * SMART AI - Knowledge Space Theory (KST) Curriculum Database
- * Multi-domain Knowledge Graph DAGs (Directed Acyclic Graphs) with Prerequisite Dependencies
+ * Multi-domain Knowledge Graph DAGs with Clean Mathematical Formatting (Unicode + KaTeX Ready)
  */
 
 window.SMART_CURRICULUM = {
@@ -20,12 +20,12 @@ window.SMART_CURRICULUM = {
         bktDefaults: { L0: 0.25, T: 0.15, S: 0.08, G: 0.15 },
         diagnosticQuestion: {
           id: "q_m1",
-          question: "Rút gọn biểu thức $P = \\frac{x^2 - 4}{x - 2}$ với $x \\neq 2$:",
-          options: ["x - 2", "x + 2", "x^2 + 2", "4x - 2"],
+          question: "Rút gọn biểu thức P = (x² - 4)/(x - 2) với điều kiện x ≠ 2:",
+          options: ["x - 2", "x + 2", "x² + 2", "4x - 2"],
           correctIndex: 1,
-          hint: "Sử dụng hằng đẳng thức hiệu hai bình phương $a^2 - b^2 = (a-b)(a+b)$.",
+          hint: "Sử dụng hằng đẳng thức hiệu hai bình phương: a² - b² = (a - b)(a + b).",
           misconceptions: {
-            0: "Lẫn lộn dấu trong hằng đẳng thức $a^2 - b^2$.",
+            0: "Lẫn lộn dấu trong hằng đẳng thức a² - b².",
             2: "Chưa phân tích được đa thức thành nhân tử.",
             3: "Cộng trừ tùy tiện hệ số và ẩn số."
           }
@@ -40,12 +40,12 @@ window.SMART_CURRICULUM = {
         bktDefaults: { L0: 0.2, T: 0.14, S: 0.1, G: 0.2 },
         diagnosticQuestion: {
           id: "q_m2",
-          question: "Tích vô hướng của 2 vector $\\mathbf{u} = [2, -3]$ và $\\mathbf{v} = [4, 1]$ là:",
+          question: "Tích vô hướng của 2 vector u = [2, -3] và v = [4, 1] là:",
           options: ["5", "11", "8", "-5"],
           correctIndex: 0,
-          hint: "Tích vô hướng $\\mathbf{u} \\cdot \\mathbf{v} = u_1 v_1 + u_2 v_2 = 2(4) + (-3)(1) = 8 - 3 = 5$.",
+          hint: "Tích vô hướng u · v = u₁v₁ + u₂v₂ = 2(4) + (-3)(1) = 8 - 3 = 5.",
           misconceptions: {
-            1: "Cộng nhầm dấu của số âm $(-3) \\times 1 = -3$ thành $+3$.",
+            1: "Cộng nhầm dấu của số âm (-3) × 1 = -3 thành +3.",
             2: "Chỉ nhân phần tử đầu tiên mà bỏ qua phần tử thứ hai.",
             3: "Tính sai dấu chung của biểu thức."
           }
@@ -60,19 +60,19 @@ window.SMART_CURRICULUM = {
         bktDefaults: { L0: 0.15, T: 0.12, S: 0.12, G: 0.15 },
         diagnosticQuestion: {
           id: "q_m3",
-          question: "Đạo hàm của hàm số hợp $f(x) = (3x^2 - 1)^4$ là:",
+          question: "Đạo hàm của hàm số hợp f(x) = (3x² - 1)⁴ là:",
           options: [
-            "4(3x^2 - 1)^3",
-            "24x(3x^2 - 1)^3",
-            "12x(3x^2 - 1)^3",
-            "24(3x - 1)^3"
+            "4(3x² - 1)³",
+            "24x(3x² - 1)³",
+            "12x(3x² - 1)³",
+            "24(3x - 1)³"
           ],
           correctIndex: 1,
-          hint: "Quy tắc dây chuyền $(u^n)' = n \\cdot u^{n-1} \\cdot u'$. Ở đây $u = 3x^2 - 1 \\Rightarrow u' = 6x$.",
+          hint: "Quy tắc dây chuyền: [u(x)ⁿ]' = n · uⁿ⁻¹ · u'. Với u = 3x² - 1 thì u' = 6x.",
           misconceptions: {
-            0: "Quên nhân với đạo hàm của hàm hợp bên trong $u' = 6x$.",
-            2: "Nhân sai hệ số đạo hàm bên trong ($3 \\times 4$ thay vì $6x \\times 4$).",
-            3: "Mất lũy thừa bậc hai của biến $x$ trong ngoặc."
+            0: "Quên nhân với đạo hàm của hàm hợp bên trong u' = 6x.",
+            2: "Nhân sai hệ số đạo hàm bên trong (3 × 4 thay vì 6x × 4).",
+            3: "Mất lũy thừa bậc hai của biến x trong ngoặc."
           }
         }
       },
@@ -85,19 +85,19 @@ window.SMART_CURRICULUM = {
         bktDefaults: { L0: 0.1, T: 0.1, S: 0.15, G: 0.1 },
         diagnosticQuestion: {
           id: "q_m4",
-          question: "Trong thuật toán Gradient Descent với learning rate $\\alpha$, trọng số $w$ được cập nhật theo công thức nào?",
+          question: "Trong thuật toán Gradient Descent với tốc độ học α, trọng số w được cập nhật theo công thức nào?",
           options: [
-            "w_{new} = w_{old} + \\alpha \\nabla L(w)",
-            "w_{new} = w_{old} - \\alpha \\nabla L(w)",
-            "w_{new} = w_{old} \\times \\nabla L(w)",
-            "w_{new} = w_{old} - \\frac{1}{\\alpha} \\nabla L(w)"
+            "w_mới = w_cũ + α · ∇L(w)",
+            "w_mới = w_cũ - α · ∇L(w)",
+            "w_mới = w_cũ × ∇L(w)",
+            "w_mới = w_cũ - (1/α) · ∇L(w)"
           ],
           correctIndex: 1,
-          hint: "Gradient chỉ hướng tăng nhanh nhất, do đó để giảm thiểu mất mát (loss) ta phải đi ngược chiều gradient: dấu '-'.",
+          hint: "Gradient chỉ hướng tăng nhanh nhất của hàm mất mát. Để tối thiểu hóa loss, ta phải đi ngược chiều gradient (dấu trừ '-').",
           misconceptions: {
             0: "Nhầm lẫn giữa Gradient Ascent (tăng hàm mục tiêu) và Gradient Descent (giảm hàm mất mát).",
-            2: "Hiểu sai phép cập nhật bước lặp là phép nhân thay vì phép cộng/trừ vector.",
-            3: "Nhầm vị trí hệ số tốc độ học $\\alpha$."
+            2: "Hiểu sai phép cập nhật bước lặp là phép nhân thay vì phép trừ vector.",
+            3: "Nhầm vị trí hệ số tốc độ học α."
           }
         }
       },
@@ -110,15 +110,15 @@ window.SMART_CURRICULUM = {
         bktDefaults: { L0: 0.2, T: 0.12, S: 0.12, G: 0.2 },
         diagnosticQuestion: {
           id: "q_m5",
-          question: "Công thức định lý Bayes biểu diễn xác suất hậu nghiệm $P(A|B)$ là:",
+          question: "Công thức định lý Bayes biểu diễn xác suất hậu nghiệm P(A|B) là:",
           options: [
-            "P(A|B) = \\frac{P(B|A) \\cdot P(A)}{P(B)}",
-            "P(A|B) = \\frac{P(A|B) \\cdot P(B)}{P(A)}",
-            "P(A|B) = P(A \\cap B) \\cdot P(B)",
-            "P(A|B) = \\frac{P(A) + P(B)}{P(A \\cap B)}"
+            "P(A|B) = [P(B|A) · P(A)] / P(B)",
+            "P(A|B) = [P(A|B) · P(B)] / P(A)",
+            "P(A|B) = P(A ∩ B) · P(B)",
+            "P(A|B) = [P(A) + P(B)] / P(A ∩ B)"
           ],
           correctIndex: 0,
-          hint: "Định lý Bayes: $P(A|B) = \\frac{P(B|A) P(A)}{P(B)}$.",
+          hint: "Định lý Bayes: P(A|B) = [P(B|A) · P(A)] / P(B).",
           misconceptions: {
             1: "Đảo ngược điều kiện tiền nghiệm và hậu nghiệm.",
             2: "Nhầm giữa xác suất đồng thời và xác suất có điều kiện.",
@@ -173,7 +173,7 @@ window.SMART_CURRICULUM = {
           question: "Trong JavaScript/TypeScript, giá trị nào sau đây KHÔNG phải là 'falsy'?",
           options: ["0", "'' (chuỗi rỗng)", "[] (mảng rỗng)", "null"],
           correctIndex: 2,
-          hint: "Mảng rỗng `[]` và đối tượng rỗng `{}` trong JavaScript là object nên luôn truthy.",
+          hint: "Mảng rỗng [] và đối tượng rỗng {} trong JavaScript là object nên luôn là truthy.",
           misconceptions: {
             0: "Số 0 là falsy.",
             1: "Chuỗi rỗng '' có độ dài 0 là falsy.",
