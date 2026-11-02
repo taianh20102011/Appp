@@ -693,3 +693,54 @@ p {
   background-size: 200% 100%;
   animation: shimmerSweep 1.8s infinite;
 }
+
+/* React Bits: Spotlight Card Effect */
+.spotlight-card, .bento-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.spotlight-card::before, .bento-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(400px circle at var(--spotlight-x, -999px) var(--spotlight-y, -999px), rgba(37, 99, 235, 0.08), transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 0.3s ease;
+}
+
+[data-theme="dark"] .spotlight-card::before, [data-theme="dark"] .bento-card::before {
+  background: radial-gradient(400px circle at var(--spotlight-x, -999px) var(--spotlight-y, -999px), rgba(56, 189, 248, 0.12), transparent 70%);
+}
+
+/* React Bits: Shiny Text */
+.shiny-text {
+  background: linear-gradient(110deg, var(--text-primary) 30%, var(--accent-primary) 50%, var(--text-primary) 70%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shinyTextSweep 4s linear infinite;
+}
+
+@keyframes shinyTextSweep {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Captcha & Anti-Bot Spinner */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Ambient Vector Grid Canvas */
+#ambientGridCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+}

@@ -9,7 +9,30 @@
   <meta name="theme-color" content="#2563EB">
 
   <!-- Content Security Policy: Strict defense against untrusted execution -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://challenges.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com;">
+
+  <!-- Tailwind CSS Engine -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: ['class', '[data-theme="dark"]'],
+      theme: {
+        extend: {
+          borderRadius: {
+            DEFAULT: '6px',
+            md: '6px',
+            lg: '6px'
+          },
+          colors: {
+            brand: '#2563EB',
+            brandHover: '#1D4ED8',
+            surfaceLight: '#FFFFFF',
+            surfaceDark: '#0D0F14'
+          }
+        }
+      }
+    };
+  </script>
 
   <!-- Fonts & Core Styles -->
   <link rel="stylesheet" href="./css/styles.css">
@@ -23,6 +46,8 @@
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.15/dist/gsap.min.js"></script>
 </head>
 <body>
+  <!-- Ambient Interactive Vector Grid Canvas (React Bits) -->
+  <canvas id="ambientGridCanvas"></canvas>
 
   <!-- App Header -->
   <header class="app-header">
@@ -80,10 +105,12 @@
             <span class="badge badge-green">BAYESIAN KNOWLEDGE TRACING</span>
             <span class="badge badge-amber">KNOWLEDGE SPACE THEORY (DAG)</span>
           </div>
-          <h1>SMART AI – Trí Tuệ Nhân Tạo Học Tập Thích Nghi</h1>
+          <h1 class="shiny-text">SMART AI – Trí Tuệ Nhân Tạo Học Tập Thích Nghi</h1>
           <p style="font-size: 0.95rem; max-width: 820px; margin-top: 4px;">
             Mô hình hóa đường cong nhận thức, truy vết lỗ hổng kiến thức gốc rễ (Root Cause Deficit) và tự động kiến tạo lộ trình học tập cá nhân hóa chuẩn xác theo thời gian thực.
           </p>
+          <!-- Anti-Bot Turnstile / Captcha Verification Gate -->
+          <div id="captchaWidgetContainer" style="margin-top: 10px;"></div>
         </div>
 
         <!-- Segmented Tab Controls (NameThatUI) -->
@@ -421,6 +448,8 @@
   <!-- Scripts -->
   <script src="./js/curriculum-data.js"></script>
   <script src="./js/crypto-security.js"></script>
+  <script src="./js/captcha-service.js"></script>
+  <script src="./js/react-bits.js"></script>
   <script src="./js/knowledge-engine.js"></script>
   <script src="./js/neural-engine.js"></script>
   <script src="./js/ai-service.js"></script>

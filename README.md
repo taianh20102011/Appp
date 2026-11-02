@@ -28,14 +28,22 @@ Trong kỷ nguyên số, phương pháp học tập truyền thống "đồng nh
 - Chỉ cần **mở file `index.html`** trên trình duyệt bất kỳ (Google Chrome, Microsoft Edge, Safari, Firefox, Cốc Cốc) là hệ thống hoạt động đầy đủ tính năng.
 - **Hỗ trợ PWA (Progressive Web App)**: Cho phép bấm "Cài đặt ứng dụng" trên thanh địa chỉ để chạy như một phần mềm độc lập mượt mà trên máy tính và điện thoại.
 
-### 2. Thiết Kế Đẳng Cấp (Alabaster Porcelain & NameThatUI Standards)
-- Tuân thủ nghiêm ngặt chuẩn thiết kế cao cấp:
+### 2. Thiết Kế Đẳng Cấp (React Bits, Tailwind CSS & Alabaster Standards)
+- Tuân thủ nghiêm ngặt chuẩn thiết kế hiện đại:
+  - **Tích hợp Tailwind CSS**: Tiện ích styling siêu nhẹ, tùy biến cấu hình hệ màu sứ Alabaster Porcelain (`#F7F8FA`, `#FFFFFF`) và không gian Obsidian (`#08090C`, `#0D0F14`).
+  - **Bộ hiệu ứng thị giác React Bits (reactbits.dev)**:
+    - `SpotlightCard`: Ánh sáng radial phát quang lướt theo tọa độ con trỏ chuột trên từng thẻ Bento.
+    - `ShinyText`: Hiệu ứng quét ánh kim titan chuyển sắc trên tiêu đề chính.
+    - `MagneticButton`: Nút bấm có lực hút từ tính mềm mại theo quán tính di chuột.
+    - `AmbientGridPattern`: Lưới tọa độ vector chuyển động ẩn hiện tương tác ở tầng nền Canvas.
   - **Bo góc chuẩn xác 6px (`rounded-[6px]`)**: Đồng bộ toàn bộ thẻ, nút bấm, ô nhập, hộp thoại.
-  - **Hiệu ứng đường viền phụ sub-pixel 1px CNC**: Tạo cảm giác tinh xảo như bề mặt kim loại cắt CNC, loại bỏ hoàn toàn các bóng đổ mờ nhạt lỗi thời.
+  - **Hiệu ứng đường viền phụ sub-pixel 1px CNC**: Tạo cảm giác tinh xảo như bề mặt kim loại cắt CNC.
   - **Hệ thống chuyển động GSAP 3.15**: Chuyển động siêu mượt ở tần số quét 60fps/120fps.
-  - **NameThatUI Patterns**: Bento Grid đa tầng, Command Palette nhanh (`Ctrl+K` hoặc `Cmd+K`), Segmented Control với chỉ báo FLIP, Radar Chart động và Đồ thị quan hệ tiên đề DAG trực quan trên Canvas.
 
-### 3. Bảo Mật Cấp Ngân Hàng & Cloudflare Security Audit
+### 3. Bảo Mật Cấp Ngân Hàng, Cloudflare Turnstile & Anti-Bot Captcha
+- **Cơ chế xác thực con người Cloudflare Turnstile & PoW (Thay thế reCAPTCHA)**:
+  - Tích hợp rào chắn chống bot không gây phiền toái (không cần chọn hình ảnh đèn giao thông hay vạch qua đường lỗi thời).
+  - Sử dụng thuật toán **Bằng chứng Công việc Mật mã học (Proof-of-Work - PoW)** giải câu đố băm SHA-256 trong 150ms để tạo chữ ký số chống spam trước khi nộp bài thi hoặc gửi email.
 - **Két sắt mã hóa khóa API**: Sử dụng thuật toán `AES-GCM-256` cùng `PBKDF2` (100.000 vòng lặp) từ Web Crypto API để mã hóa Gemini API Key, tuyệt đối không lưu chuỗi khóa dạng rõ (plaintext).
 - **Phòng chống XSS đa tầng**: Toàn bộ chuỗi hiển thị đều được mã hóa thực thể HTML (`&`, `<`, `>`, `"`, `'`).
 - **Chính sách CSP nghiêm ngặt**: Chặn đứng mọi hành vi nạp mã độc từ nguồn bên ngoài.

@@ -26,6 +26,18 @@
     setupCommandPalette();
     registerServiceWorker();
     checkSecurityPosture();
+
+    // React Bits Visual Effects Suite
+    if (window.ReactBits) {
+      window.ReactBits.initSpotlightCards();
+      window.ReactBits.initMagneticButtons();
+      window.ReactBits.initGridBackground('ambientGridCanvas');
+    }
+
+    // Cloudflare Turnstile & PoW Anti-Bot Captcha Widget
+    if (window.SmartCaptcha) {
+      window.SmartCaptcha.renderWidget('captchaWidgetContainer');
+    }
   }
 
   function cacheElements() {
@@ -824,6 +836,11 @@
   }
 
   function handleExportGmail() {
+    if (window.SmartCaptcha && !window.SmartCaptcha.getStatus().isVerified) {
+      window.SmartCaptcha.requireVerification('Gửi Báo Cáo qua Gmail', () => handleExportGmail());
+      return;
+    }
+
     const summary = engine.generateAdaptiveRoadmap();
     const gaps = engine.diagnoseKnowledgeGaps();
     const curr = window.SMART_CURRICULUM[currentCurriculumKey];

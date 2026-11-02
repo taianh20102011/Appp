@@ -11,6 +11,8 @@ const ASSETS_TO_CACHE = [
   './css/styles.css',
   './js/curriculum-data.js',
   './js/crypto-security.js',
+  './js/captcha-service.js',
+  './js/react-bits.js',
   './js/knowledge-engine.js',
   './js/neural-engine.js',
   './js/ai-service.js',
